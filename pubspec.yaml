@@ -16,6 +16,7 @@ dependencies:
   drift_postgres: ^1.2.3
   drift: ^2.18.0
   uuid: ^4.4.0
+  dart_jsonwebtoken: ^2.14.0
 
 dev_dependencies:
   http: ^1.1.0

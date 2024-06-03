@@ -12,8 +12,9 @@ class ApiException implements Exception {
   const ApiException.badRequest(this.errorMessage)
       : statusCode = HttpStatus.badRequest;
 
-  const ApiException.unauthorized(this.errorMessage)
-      : statusCode = HttpStatus.unauthorized;
+  const ApiException.unauthorized([String? errorMessage])
+      : statusCode = HttpStatus.unauthorized,
+        errorMessage = errorMessage ?? 'Unauthorized';
 
   const ApiException.internalServerError(this.errorMessage)
       : statusCode = HttpStatus.internalServerError;

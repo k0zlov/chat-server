@@ -1,4 +1,3 @@
-import 'package:chat_server/middleware/middleware_handler.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
@@ -7,7 +6,7 @@ abstract class ServerRoute {
     router = configureRouter(Router());
   }
 
-  final List<MiddlewareHandler>? middlewares;
+  final List<Middleware>? middlewares;
 
   late final Router router;
 
@@ -20,8 +19,8 @@ abstract class ServerRoute {
 
     Pipeline pipeline = const Pipeline();
 
-    for (final MiddlewareHandler middleware in middlewares!) {
-      pipeline = pipeline.addMiddleware(middleware());
+    for (final Middleware middleware in middlewares!) {
+      pipeline = pipeline.addMiddleware(middleware);
     }
 
     final Handler handler = pipeline.addHandler(router.call);
