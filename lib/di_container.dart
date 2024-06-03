@@ -53,7 +53,7 @@ void _middlewares() {
 }
 
 Future<void> _database() async {
-  final DotEnv env = DotEnv()..load(['../../.env']);
+  final DotEnv env = DotEnv(includePlatformEnvironment: true)..load(['../../.env']);
 
   String orElse() => '';
 
