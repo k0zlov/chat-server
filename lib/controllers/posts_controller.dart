@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/exceptions/api_error.dart';
+import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
 import 'package:shelf/shelf.dart';
 
@@ -41,32 +42,24 @@ class PostsControllerImpl implements PostsController {
 
   @override
   Future<Response> addPost(Request request) async {
-    final dynamic payload;
+    const List<ValidatorParameter<String>> parameters = [
+      ValidatorParameter(name: 'subject'),
+      ValidatorParameter(name: 'content', nullable: true),
+    ];
 
-    try {
-      final String json = await request.readAsString();
-      payload = jsonDecode(json);
-      payload as Map<String, dynamic>;
-    } catch (e) {
-      const String errorMessage = 'Invalid request body.';
+    final Map<String, dynamic> body = await RequestValidator.validateReqBody(
+      request,
+      requiredParams: parameters,
+    );
 
-      throw const ApiException.badRequest(errorMessage);
-    }
-
-    final dynamic subject = payload['subject'];
-    final dynamic content = payload['content'];
-
-    if (subject == null || subject is! String) {
-      const String errorMessage = 'Parameter subject was not provided.';
-
-      throw const ApiException.badRequest(errorMessage);
-    }
+    final String subject = body['subject'] as String;
+    final String? content = body['content'] as String?;
 
     try {
       final Post? post = await database.posts.insertReturningOrNull(
         PostsCompanion(
           subject: Value(subject),
-          content: content is String ? Value(content) : const Value(''),
+          content: content != null ? Value(content) : const Value(''),
         ),
       );
 
@@ -81,16 +74,18 @@ class PostsControllerImpl implements PostsController {
 
   @override
   Future<Response> removePost(Request request) async {
-    final Map<String, String> queryParams = request.url.queryParameters;
+    final Map<String, String> queryParams = RequestValidator.validateReqParams(
+      request,
+      requiredParams: ['id'],
+    );
 
     dynamic id = queryParams['id'];
 
     try {
-      id as String;
-      id = int.parse(id);
+      id = int.parse(id as String);
       id as int;
-    } catch(e) {
-      const String errorMessage = 'Query parameter id was not provided.';
+    } catch (e) {
+      const String errorMessage = 'The Query parameter id has an invalid type.';
       throw const ApiException.badRequest(errorMessage);
     }
 
