@@ -18,6 +18,10 @@ class ApiException implements Exception {
   const ApiException.internalServerError(this.errorMessage)
       : statusCode = HttpStatus.internalServerError;
 
+  const ApiException.notFound()
+      : statusCode = HttpStatus.notFound,
+        errorMessage = 'Resource was not found';
+
   final int statusCode;
   final String errorMessage;
 

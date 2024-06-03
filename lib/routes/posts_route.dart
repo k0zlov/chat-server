@@ -5,7 +5,7 @@ import 'package:shelf_router/shelf_router.dart';
 class PostsRoute extends ServerRoute {
   PostsRoute({
     required this.postsController,
-    super.middleware,
+    super.middlewares,
   });
 
   final PostsController postsController;
@@ -18,6 +18,6 @@ class PostsRoute extends ServerRoute {
     return router
       ..get('/', postsController.root)
       ..post('/add', postsController.addPost)
-      ..post('/remove', postsController.removePost);
+      ..delete('/remove', postsController.removePost);
   }
 }

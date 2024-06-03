@@ -1,5 +1,7 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:chat_server/exceptions/api_error.dart';
 import 'package:chat_server/middleware/middleware_handler.dart';
 import 'package:chat_server/routes/server_route.dart';
 import 'package:chat_server/server/server_config.dart';
@@ -13,16 +15,21 @@ class ChatServer {
     this.middlewares = const <MiddlewareHandler>[],
     this.routes = const <ServerRoute>[],
   }) {
+    _router = Router(notFoundHandler: _notFoundHandler);
     _buildRoutes();
   }
 
-  final Router _router = Router();
+  late final Router _router;
 
   final ServerConfig config;
 
   final List<ServerRoute> routes;
 
   final List<MiddlewareHandler> middlewares;
+
+  Response _notFoundHandler(Request request) {
+    return const ApiException.notFound().toResponse();
+  }
 
   void _buildRoutes() {
     _router.get('/', (req) => Response.ok('Hello world!'));
@@ -47,6 +54,6 @@ class ChatServer {
       config.port,
     );
 
-    print('Server listening on port ${server.port}');
+    print('Server listening on ${server.address}:${server.port}');
   }
 }
