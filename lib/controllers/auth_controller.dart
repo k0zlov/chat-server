@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:chat_server/database/database.dart';
@@ -119,7 +120,7 @@ class AuthControllerImpl implements AuthController {
       throw const ApiException.internalServerError(errorMessage);
     }
 
-    await mailService.sendInformationLetter(email: email);
+    unawaited(mailService.sendInformationLetter(email: email));
 
     final Map<String, String> response = {
       'refreshToken': refreshToken,
@@ -211,9 +212,11 @@ class AuthControllerImpl implements AuthController {
     await (database.users.update()..where((tbl) => tbl.id.equals(user.id)))
         .write(newUser);
 
-    await mailService.sendActivationLetter(
-      email: email,
-      activationId: newUser.activation,
+    unawaited(
+      mailService.sendActivationLetter(
+        email: email,
+        activationId: newUser.activation,
+      ),
     );
 
     final Map<String, dynamic> response = {
