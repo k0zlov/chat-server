@@ -18,6 +18,8 @@ abstract interface class AuthController {
 
   Future<Response> login(Request request);
 
+  Future<Response> logout(Request request);
+
   Future<Response> activation(Request request, String id);
 
   Future<Response> refresh(Request request);
@@ -220,5 +222,34 @@ class AuthControllerImpl implements AuthController {
     };
 
     return Response.ok(jsonEncode(response));
+  }
+
+  @override
+  Future<Response> logout(Request request) async {
+    final int userId = request.context['userId']! as int;
+
+    final User? user = await (database.users.select()
+          ..where((tbl) => tbl.id.equals(userId)))
+        .getSingleOrNull();
+
+    if (user == null) {
+      const errorMessage = 'Could not find user with such id';
+      throw const ApiException.unauthorized(errorMessage);
+    }
+
+    if (user.refreshtoken.isEmpty) {
+      return Response.ok('User has already been logged out');
+    }
+
+    final User newUser = user.copyWith(refreshtoken: '');
+
+    final bool result = await database.users.update().replace(newUser);
+
+    if (!result) {
+      const errorMessage = 'Could not log out user';
+      throw const ApiException.internalServerError(errorMessage);
+    }
+
+    return Response.ok('Successfully logged out');
   }
 }

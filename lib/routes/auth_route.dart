@@ -41,6 +41,7 @@ class AuthRoute extends ServerRoute {
       ..getMw('/', controller.getUser, [authMiddleware])
       ..get('/refresh', controller.refresh)
       ..get('/activation/<activation>', controller.activation)
+      ..postMw('/logout', controller.logout, [authMiddleware])
       ..postMw('/login', controller.login, [loginValidator])
       ..postMw('/register', controller.register, [regValidator]);
   }
