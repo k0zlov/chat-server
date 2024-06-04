@@ -4,11 +4,11 @@ import 'package:shelf_router/shelf_router.dart';
 
 class AuthRoute extends ServerRoute {
   AuthRoute({
-    required this.authController,
+    required this.controller,
     super.middlewares,
   });
 
-  final AuthController authController;
+  final AuthController controller;
 
   @override
   String get name => 'auth';
@@ -16,10 +16,10 @@ class AuthRoute extends ServerRoute {
   @override
   Router configureRouter(Router router) {
     return router
-      ..get('/', authController.root)
-      ..get('/refresh', authController.refresh)
-      ..post('/activation', authController.activation)
-      ..post('/login', authController.login)
-      ..post('/register', authController.register);
+      ..get('/', controller.root)
+      ..get('/refresh', controller.refresh)
+      ..post('/activation', controller.activation)
+      ..post('/login', controller.login)
+      ..post('/register', controller.register);
   }
 }
