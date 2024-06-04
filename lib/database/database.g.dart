@@ -245,11 +245,11 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           ),
           type: DriftSqlType.string,
           requiredDuringInsert: true);
-  static const VerificationMeta _refreshtokenMeta =
-      const VerificationMeta('refreshtoken');
+  static const VerificationMeta _refreshTokenMeta =
+      const VerificationMeta('refreshToken');
   @override
-  late final GeneratedColumn<String> refreshtoken = GeneratedColumn<String>(
-      'refreshtoken', aliasedName, false,
+  late final GeneratedColumn<String> refreshToken = GeneratedColumn<String>(
+      'refresh_token', aliasedName, false,
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
@@ -283,7 +283,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         name,
         email,
         password,
-        refreshtoken,
+        refreshToken,
         activation,
         isActivated,
         createdAt
@@ -319,13 +319,13 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     } else if (isInserting) {
       context.missing(_passwordMeta);
     }
-    if (data.containsKey('refreshtoken')) {
+    if (data.containsKey('refresh_token')) {
       context.handle(
-          _refreshtokenMeta,
-          refreshtoken.isAcceptableOrUnknown(
-              data['refreshtoken']!, _refreshtokenMeta));
+          _refreshTokenMeta,
+          refreshToken.isAcceptableOrUnknown(
+              data['refresh_token']!, _refreshTokenMeta));
     } else if (isInserting) {
-      context.missing(_refreshtokenMeta);
+      context.missing(_refreshTokenMeta);
     }
     if (data.containsKey('activation')) {
       context.handle(
@@ -362,8 +362,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.string, data['${effectivePrefix}email'])!,
       password: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}password'])!,
-      refreshtoken: attachedDatabase.typeMapping
-          .read(DriftSqlType.string, data['${effectivePrefix}refreshtoken'])!,
+      refreshToken: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}refresh_token'])!,
       activation: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}activation'])!,
       isActivated: attachedDatabase.typeMapping
@@ -384,7 +384,7 @@ class User extends DataClass implements Insertable<User> {
   final String name;
   final String email;
   final String password;
-  final String refreshtoken;
+  final String refreshToken;
   final String activation;
   final bool isActivated;
   final PgDateTime createdAt;
@@ -393,7 +393,7 @@ class User extends DataClass implements Insertable<User> {
       required this.name,
       required this.email,
       required this.password,
-      required this.refreshtoken,
+      required this.refreshToken,
       required this.activation,
       required this.isActivated,
       required this.createdAt});
@@ -404,7 +404,7 @@ class User extends DataClass implements Insertable<User> {
     map['name'] = Variable<String>(name);
     map['email'] = Variable<String>(email);
     map['password'] = Variable<String>(password);
-    map['refreshtoken'] = Variable<String>(refreshtoken);
+    map['refresh_token'] = Variable<String>(refreshToken);
     map['activation'] = Variable<String>(activation);
     map['is_activated'] = Variable<bool>(isActivated);
     map['created_at'] =
@@ -418,7 +418,7 @@ class User extends DataClass implements Insertable<User> {
       name: Value(name),
       email: Value(email),
       password: Value(password),
-      refreshtoken: Value(refreshtoken),
+      refreshToken: Value(refreshToken),
       activation: Value(activation),
       isActivated: Value(isActivated),
       createdAt: Value(createdAt),
@@ -433,7 +433,7 @@ class User extends DataClass implements Insertable<User> {
       name: serializer.fromJson<String>(json['name']),
       email: serializer.fromJson<String>(json['email']),
       password: serializer.fromJson<String>(json['password']),
-      refreshtoken: serializer.fromJson<String>(json['refreshtoken']),
+      refreshToken: serializer.fromJson<String>(json['refreshToken']),
       activation: serializer.fromJson<String>(json['activation']),
       isActivated: serializer.fromJson<bool>(json['isActivated']),
       createdAt: serializer.fromJson<PgDateTime>(json['createdAt']),
@@ -447,7 +447,7 @@ class User extends DataClass implements Insertable<User> {
       'name': serializer.toJson<String>(name),
       'email': serializer.toJson<String>(email),
       'password': serializer.toJson<String>(password),
-      'refreshtoken': serializer.toJson<String>(refreshtoken),
+      'refreshToken': serializer.toJson<String>(refreshToken),
       'activation': serializer.toJson<String>(activation),
       'isActivated': serializer.toJson<bool>(isActivated),
       'createdAt': serializer.toJson<PgDateTime>(createdAt),
@@ -459,7 +459,7 @@ class User extends DataClass implements Insertable<User> {
           String? name,
           String? email,
           String? password,
-          String? refreshtoken,
+          String? refreshToken,
           String? activation,
           bool? isActivated,
           PgDateTime? createdAt}) =>
@@ -468,7 +468,7 @@ class User extends DataClass implements Insertable<User> {
         name: name ?? this.name,
         email: email ?? this.email,
         password: password ?? this.password,
-        refreshtoken: refreshtoken ?? this.refreshtoken,
+        refreshToken: refreshToken ?? this.refreshToken,
         activation: activation ?? this.activation,
         isActivated: isActivated ?? this.isActivated,
         createdAt: createdAt ?? this.createdAt,
@@ -480,7 +480,7 @@ class User extends DataClass implements Insertable<User> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('password: $password, ')
-          ..write('refreshtoken: $refreshtoken, ')
+          ..write('refreshToken: $refreshToken, ')
           ..write('activation: $activation, ')
           ..write('isActivated: $isActivated, ')
           ..write('createdAt: $createdAt')
@@ -489,7 +489,7 @@ class User extends DataClass implements Insertable<User> {
   }
 
   @override
-  int get hashCode => Object.hash(id, name, email, password, refreshtoken,
+  int get hashCode => Object.hash(id, name, email, password, refreshToken,
       activation, isActivated, createdAt);
   @override
   bool operator ==(Object other) =>
@@ -499,7 +499,7 @@ class User extends DataClass implements Insertable<User> {
           other.name == this.name &&
           other.email == this.email &&
           other.password == this.password &&
-          other.refreshtoken == this.refreshtoken &&
+          other.refreshToken == this.refreshToken &&
           other.activation == this.activation &&
           other.isActivated == this.isActivated &&
           other.createdAt == this.createdAt);
@@ -510,7 +510,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> name;
   final Value<String> email;
   final Value<String> password;
-  final Value<String> refreshtoken;
+  final Value<String> refreshToken;
   final Value<String> activation;
   final Value<bool> isActivated;
   final Value<PgDateTime> createdAt;
@@ -519,7 +519,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.name = const Value.absent(),
     this.email = const Value.absent(),
     this.password = const Value.absent(),
-    this.refreshtoken = const Value.absent(),
+    this.refreshToken = const Value.absent(),
     this.activation = const Value.absent(),
     this.isActivated = const Value.absent(),
     this.createdAt = const Value.absent(),
@@ -529,21 +529,21 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String name,
     required String email,
     required String password,
-    required String refreshtoken,
+    required String refreshToken,
     required String activation,
     this.isActivated = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : name = Value(name),
         email = Value(email),
         password = Value(password),
-        refreshtoken = Value(refreshtoken),
+        refreshToken = Value(refreshToken),
         activation = Value(activation);
   static Insertable<User> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? email,
     Expression<String>? password,
-    Expression<String>? refreshtoken,
+    Expression<String>? refreshToken,
     Expression<String>? activation,
     Expression<bool>? isActivated,
     Expression<PgDateTime>? createdAt,
@@ -553,7 +553,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (name != null) 'name': name,
       if (email != null) 'email': email,
       if (password != null) 'password': password,
-      if (refreshtoken != null) 'refreshtoken': refreshtoken,
+      if (refreshToken != null) 'refresh_token': refreshToken,
       if (activation != null) 'activation': activation,
       if (isActivated != null) 'is_activated': isActivated,
       if (createdAt != null) 'created_at': createdAt,
@@ -565,7 +565,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       Value<String>? name,
       Value<String>? email,
       Value<String>? password,
-      Value<String>? refreshtoken,
+      Value<String>? refreshToken,
       Value<String>? activation,
       Value<bool>? isActivated,
       Value<PgDateTime>? createdAt}) {
@@ -574,7 +574,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       name: name ?? this.name,
       email: email ?? this.email,
       password: password ?? this.password,
-      refreshtoken: refreshtoken ?? this.refreshtoken,
+      refreshToken: refreshToken ?? this.refreshToken,
       activation: activation ?? this.activation,
       isActivated: isActivated ?? this.isActivated,
       createdAt: createdAt ?? this.createdAt,
@@ -596,8 +596,8 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (password.present) {
       map['password'] = Variable<String>(password.value);
     }
-    if (refreshtoken.present) {
-      map['refreshtoken'] = Variable<String>(refreshtoken.value);
+    if (refreshToken.present) {
+      map['refresh_token'] = Variable<String>(refreshToken.value);
     }
     if (activation.present) {
       map['activation'] = Variable<String>(activation.value);
@@ -619,7 +619,7 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('name: $name, ')
           ..write('email: $email, ')
           ..write('password: $password, ')
-          ..write('refreshtoken: $refreshtoken, ')
+          ..write('refreshToken: $refreshToken, ')
           ..write('activation: $activation, ')
           ..write('isActivated: $isActivated, ')
           ..write('createdAt: $createdAt')
@@ -1237,7 +1237,7 @@ typedef $$UsersTableInsertCompanionBuilder = UsersCompanion Function({
   required String name,
   required String email,
   required String password,
-  required String refreshtoken,
+  required String refreshToken,
   required String activation,
   Value<bool> isActivated,
   Value<PgDateTime> createdAt,
@@ -1247,7 +1247,7 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<String> name,
   Value<String> email,
   Value<String> password,
-  Value<String> refreshtoken,
+  Value<String> refreshToken,
   Value<String> activation,
   Value<bool> isActivated,
   Value<PgDateTime> createdAt,
@@ -1276,7 +1276,7 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<String> name = const Value.absent(),
             Value<String> email = const Value.absent(),
             Value<String> password = const Value.absent(),
-            Value<String> refreshtoken = const Value.absent(),
+            Value<String> refreshToken = const Value.absent(),
             Value<String> activation = const Value.absent(),
             Value<bool> isActivated = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
@@ -1286,7 +1286,7 @@ class $$UsersTableTableManager extends RootTableManager<
             name: name,
             email: email,
             password: password,
-            refreshtoken: refreshtoken,
+            refreshToken: refreshToken,
             activation: activation,
             isActivated: isActivated,
             createdAt: createdAt,
@@ -1296,7 +1296,7 @@ class $$UsersTableTableManager extends RootTableManager<
             required String name,
             required String email,
             required String password,
-            required String refreshtoken,
+            required String refreshToken,
             required String activation,
             Value<bool> isActivated = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
@@ -1306,7 +1306,7 @@ class $$UsersTableTableManager extends RootTableManager<
             name: name,
             email: email,
             password: password,
-            refreshtoken: refreshtoken,
+            refreshToken: refreshToken,
             activation: activation,
             isActivated: isActivated,
             createdAt: createdAt,
@@ -1349,8 +1349,8 @@ class $$UsersTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<String> get refreshtoken => $state.composableBuilder(
-      column: $state.table.refreshtoken,
+  ColumnFilters<String> get refreshToken => $state.composableBuilder(
+      column: $state.table.refreshToken,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -1432,8 +1432,8 @@ class $$UsersTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<String> get refreshtoken => $state.composableBuilder(
-      column: $state.table.refreshtoken,
+  ColumnOrderings<String> get refreshToken => $state.composableBuilder(
+      column: $state.table.refreshToken,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

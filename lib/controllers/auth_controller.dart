@@ -110,7 +110,7 @@ class AuthControllerImpl implements AuthController {
     final String refreshToken = tokenService.generateRefreshToken(user.id);
     final String accessToken = tokenService.generateAccessToken(user.id);
 
-    final User newUser = user.copyWith(refreshtoken: refreshToken);
+    final User newUser = user.copyWith(refreshToken: refreshToken);
 
     final bool result = await database.users.update().replace(newUser);
 
@@ -144,7 +144,7 @@ class AuthControllerImpl implements AuthController {
     }
 
     final User? user = await (database.users.select()
-          ..where((tbl) => tbl.refreshtoken.equals(token)))
+          ..where((tbl) => tbl.refreshToken.equals(token)))
         .getSingleOrNull();
 
     if (user == null) {
@@ -155,7 +155,7 @@ class AuthControllerImpl implements AuthController {
     final String refreshToken = tokenService.generateRefreshToken(user.id);
     final String accessToken = tokenService.generateAccessToken(user.id);
 
-    final User newUser = user.copyWith(refreshtoken: refreshToken);
+    final User newUser = user.copyWith(refreshToken: refreshToken);
 
     await database.users.update().replace(newUser);
 
@@ -191,7 +191,7 @@ class AuthControllerImpl implements AuthController {
         name: Value(name),
         password: Value(password),
         email: Value(email),
-        refreshtoken: const Value(''),
+        refreshToken: const Value(''),
         activation: const Value(''),
       ),
     );
@@ -203,7 +203,7 @@ class AuthControllerImpl implements AuthController {
     final String activation = const UuidV4().generate();
 
     final User newUser = user.copyWith(
-      refreshtoken: refreshToken,
+      refreshToken: refreshToken,
       activation: activation,
     );
 
@@ -237,11 +237,11 @@ class AuthControllerImpl implements AuthController {
       throw const ApiException.unauthorized(errorMessage);
     }
 
-    if (user.refreshtoken.isEmpty) {
+    if (user.refreshToken.isEmpty) {
       return Response.ok('User has already been logged out');
     }
 
-    final User newUser = user.copyWith(refreshtoken: '');
+    final User newUser = user.copyWith(refreshToken: '');
 
     final bool result = await database.users.update().replace(newUser);
 

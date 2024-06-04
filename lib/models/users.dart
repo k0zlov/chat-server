@@ -10,7 +10,7 @@ class Users extends Table {
 
   TextColumn get password => text().withLength(min: 6)();
 
-  TextColumn get refreshtoken => text().unique()();
+  TextColumn get refreshToken => text().unique()();
 
   TextColumn get activation => text().unique()();
 

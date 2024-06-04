@@ -11,5 +11,8 @@ void _controllers() {
         tokenService: getIt(),
         mailService: getIt(),
       ),
+    )
+    ..registerLazySingleton<ContactsController>(
+      () => ContactsControllerImpl(database: getIt()),
     );
 }
