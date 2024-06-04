@@ -38,7 +38,7 @@ class AuthRoute extends ServerRoute {
         validatorMiddleware(bodyParams: loginParams);
 
     return router
-      ..getMw('/', controller.root, [authMiddleware])
+      ..getMw('/', controller.getUser, [authMiddleware])
       ..get('/refresh', controller.refresh)
       ..get('/activation/<activation>', controller.activation)
       ..postMw('/login', controller.login, [loginValidator])

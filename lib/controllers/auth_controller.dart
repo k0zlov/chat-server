@@ -12,7 +12,7 @@ import 'package:shelf/shelf.dart';
 import 'package:uuid/v4.dart';
 
 abstract interface class AuthController {
-  Future<Response> root(Request request);
+  Future<Response> getUser(Request request);
 
   Future<Response> register(Request request);
 
@@ -35,7 +35,7 @@ class AuthControllerImpl implements AuthController {
   final MailService mailService;
 
   @override
-  Future<Response> root(Request request) async {
+  Future<Response> getUser(Request request) async {
     final int userId = request.context['userId']! as int;
 
     final User? user = await (database.users.select()

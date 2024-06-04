@@ -9,7 +9,7 @@ import 'package:shelf/shelf.dart';
 /// An abstract interface for handling post-related HTTP requests.
 abstract interface class PostsController {
   /// Handles the root endpoint, typically returning a list of posts.
-  Future<Response> root(Request request);
+  Future<Response> getPosts(Request request);
 
   /// Handles the addition of a new post.
   Future<Response> addPost(Request request);
@@ -29,7 +29,7 @@ class PostsControllerImpl implements PostsController {
   final Database database;
 
   @override
-  Future<Response> root(Request request) async {
+  Future<Response> getPosts(Request request) async {
     try {
       final List<Post> posts = await database.posts.all().get();
 
