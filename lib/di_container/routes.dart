@@ -13,6 +13,7 @@ void _routes() {
       instanceName: 'auth-route',
       () => AuthRoute(
         controller: getIt(),
+        authMiddleware: getIt(instanceName: 'auth-middleware'),
       ),
     );
 }

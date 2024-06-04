@@ -13,23 +13,26 @@ Middleware authMiddleware({
 
       final String accessToken;
 
+      final int userId;
+
       try {
         authHeader as String;
 
         accessToken = authHeader.split(' ')[1];
 
-        final int? userId = tokenService.getUserIdFromAccessToken(accessToken);
-
-        if (userId == null) throw Exception();
-
-        final modifiedRequest = request.change(
-          context: {'userId': userId},
-        );
-
-        return await innerHandler(modifiedRequest);
+        userId = tokenService.getUserIdFromAccessToken(accessToken)!;
       } catch (e) {
         throw const ApiException.unauthorized();
       }
+
+      final newRequest = request.change(
+        context: {
+          'userId': userId,
+          ...request.context,
+        },
+      );
+
+      return await innerHandler(newRequest);
     };
   };
 }

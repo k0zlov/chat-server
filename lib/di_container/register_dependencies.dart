@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:aws_sesv2_api/sesv2-2019-09-27.dart';
 import 'package:chat_server/controllers/auth_controller.dart';
 import 'package:chat_server/controllers/posts_controller.dart';
 import 'package:chat_server/database/database.dart';
@@ -11,6 +12,7 @@ import 'package:chat_server/routes/posts_route.dart';
 import 'package:chat_server/routes/server_route.dart';
 import 'package:chat_server/server/server.dart';
 import 'package:chat_server/server/server_config.dart';
+import 'package:chat_server/services/mail_service.dart';
 import 'package:chat_server/services/token_service.dart';
 import 'package:chat_server/utils/jwt_client.dart';
 import 'package:dart_jsonwebtoken/dart_jsonwebtoken.dart';
@@ -45,6 +47,7 @@ Future<ChatServer> registerDependencies() async {
   _controllers();
   _middleware();
   _routes();
+
   return _server();
 }
 

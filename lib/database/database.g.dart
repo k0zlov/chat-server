@@ -253,12 +253,14 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       type: DriftSqlType.string,
       requiredDuringInsert: true,
       defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
-  static const VerificationMeta _activationLinkMeta =
-      const VerificationMeta('activationLink');
+  static const VerificationMeta _activationMeta =
+      const VerificationMeta('activation');
   @override
-  late final GeneratedColumn<String> activationLink = GeneratedColumn<String>(
-      'activation_link', aliasedName, false,
-      type: DriftSqlType.string, requiredDuringInsert: true);
+  late final GeneratedColumn<String> activation = GeneratedColumn<String>(
+      'activation', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways('UNIQUE'));
   static const VerificationMeta _isActivatedMeta =
       const VerificationMeta('isActivated');
   @override
@@ -282,7 +284,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         email,
         password,
         refreshtoken,
-        activationLink,
+        activation,
         isActivated,
         createdAt
       ];
@@ -325,13 +327,13 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
     } else if (isInserting) {
       context.missing(_refreshtokenMeta);
     }
-    if (data.containsKey('activation_link')) {
+    if (data.containsKey('activation')) {
       context.handle(
-          _activationLinkMeta,
-          activationLink.isAcceptableOrUnknown(
-              data['activation_link']!, _activationLinkMeta));
+          _activationMeta,
+          activation.isAcceptableOrUnknown(
+              data['activation']!, _activationMeta));
     } else if (isInserting) {
-      context.missing(_activationLinkMeta);
+      context.missing(_activationMeta);
     }
     if (data.containsKey('is_activated')) {
       context.handle(
@@ -362,8 +364,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.string, data['${effectivePrefix}password'])!,
       refreshtoken: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}refreshtoken'])!,
-      activationLink: attachedDatabase.typeMapping.read(
-          DriftSqlType.string, data['${effectivePrefix}activation_link'])!,
+      activation: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}activation'])!,
       isActivated: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_activated'])!,
       createdAt: attachedDatabase.typeMapping.read(
@@ -383,7 +385,7 @@ class User extends DataClass implements Insertable<User> {
   final String email;
   final String password;
   final String refreshtoken;
-  final String activationLink;
+  final String activation;
   final bool isActivated;
   final PgDateTime createdAt;
   const User(
@@ -392,7 +394,7 @@ class User extends DataClass implements Insertable<User> {
       required this.email,
       required this.password,
       required this.refreshtoken,
-      required this.activationLink,
+      required this.activation,
       required this.isActivated,
       required this.createdAt});
   @override
@@ -403,7 +405,7 @@ class User extends DataClass implements Insertable<User> {
     map['email'] = Variable<String>(email);
     map['password'] = Variable<String>(password);
     map['refreshtoken'] = Variable<String>(refreshtoken);
-    map['activation_link'] = Variable<String>(activationLink);
+    map['activation'] = Variable<String>(activation);
     map['is_activated'] = Variable<bool>(isActivated);
     map['created_at'] =
         Variable<PgDateTime>(createdAt, PgTypes.timestampWithTimezone);
@@ -417,7 +419,7 @@ class User extends DataClass implements Insertable<User> {
       email: Value(email),
       password: Value(password),
       refreshtoken: Value(refreshtoken),
-      activationLink: Value(activationLink),
+      activation: Value(activation),
       isActivated: Value(isActivated),
       createdAt: Value(createdAt),
     );
@@ -432,7 +434,7 @@ class User extends DataClass implements Insertable<User> {
       email: serializer.fromJson<String>(json['email']),
       password: serializer.fromJson<String>(json['password']),
       refreshtoken: serializer.fromJson<String>(json['refreshtoken']),
-      activationLink: serializer.fromJson<String>(json['activationLink']),
+      activation: serializer.fromJson<String>(json['activation']),
       isActivated: serializer.fromJson<bool>(json['isActivated']),
       createdAt: serializer.fromJson<PgDateTime>(json['createdAt']),
     );
@@ -446,7 +448,7 @@ class User extends DataClass implements Insertable<User> {
       'email': serializer.toJson<String>(email),
       'password': serializer.toJson<String>(password),
       'refreshtoken': serializer.toJson<String>(refreshtoken),
-      'activationLink': serializer.toJson<String>(activationLink),
+      'activation': serializer.toJson<String>(activation),
       'isActivated': serializer.toJson<bool>(isActivated),
       'createdAt': serializer.toJson<PgDateTime>(createdAt),
     };
@@ -458,7 +460,7 @@ class User extends DataClass implements Insertable<User> {
           String? email,
           String? password,
           String? refreshtoken,
-          String? activationLink,
+          String? activation,
           bool? isActivated,
           PgDateTime? createdAt}) =>
       User(
@@ -467,7 +469,7 @@ class User extends DataClass implements Insertable<User> {
         email: email ?? this.email,
         password: password ?? this.password,
         refreshtoken: refreshtoken ?? this.refreshtoken,
-        activationLink: activationLink ?? this.activationLink,
+        activation: activation ?? this.activation,
         isActivated: isActivated ?? this.isActivated,
         createdAt: createdAt ?? this.createdAt,
       );
@@ -479,7 +481,7 @@ class User extends DataClass implements Insertable<User> {
           ..write('email: $email, ')
           ..write('password: $password, ')
           ..write('refreshtoken: $refreshtoken, ')
-          ..write('activationLink: $activationLink, ')
+          ..write('activation: $activation, ')
           ..write('isActivated: $isActivated, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -488,7 +490,7 @@ class User extends DataClass implements Insertable<User> {
 
   @override
   int get hashCode => Object.hash(id, name, email, password, refreshtoken,
-      activationLink, isActivated, createdAt);
+      activation, isActivated, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -498,7 +500,7 @@ class User extends DataClass implements Insertable<User> {
           other.email == this.email &&
           other.password == this.password &&
           other.refreshtoken == this.refreshtoken &&
-          other.activationLink == this.activationLink &&
+          other.activation == this.activation &&
           other.isActivated == this.isActivated &&
           other.createdAt == this.createdAt);
 }
@@ -509,7 +511,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> email;
   final Value<String> password;
   final Value<String> refreshtoken;
-  final Value<String> activationLink;
+  final Value<String> activation;
   final Value<bool> isActivated;
   final Value<PgDateTime> createdAt;
   const UsersCompanion({
@@ -518,7 +520,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.email = const Value.absent(),
     this.password = const Value.absent(),
     this.refreshtoken = const Value.absent(),
-    this.activationLink = const Value.absent(),
+    this.activation = const Value.absent(),
     this.isActivated = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
@@ -528,21 +530,21 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String email,
     required String password,
     required String refreshtoken,
-    required String activationLink,
+    required String activation,
     this.isActivated = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : name = Value(name),
         email = Value(email),
         password = Value(password),
         refreshtoken = Value(refreshtoken),
-        activationLink = Value(activationLink);
+        activation = Value(activation);
   static Insertable<User> custom({
     Expression<int>? id,
     Expression<String>? name,
     Expression<String>? email,
     Expression<String>? password,
     Expression<String>? refreshtoken,
-    Expression<String>? activationLink,
+    Expression<String>? activation,
     Expression<bool>? isActivated,
     Expression<PgDateTime>? createdAt,
   }) {
@@ -552,7 +554,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (email != null) 'email': email,
       if (password != null) 'password': password,
       if (refreshtoken != null) 'refreshtoken': refreshtoken,
-      if (activationLink != null) 'activation_link': activationLink,
+      if (activation != null) 'activation': activation,
       if (isActivated != null) 'is_activated': isActivated,
       if (createdAt != null) 'created_at': createdAt,
     });
@@ -564,7 +566,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       Value<String>? email,
       Value<String>? password,
       Value<String>? refreshtoken,
-      Value<String>? activationLink,
+      Value<String>? activation,
       Value<bool>? isActivated,
       Value<PgDateTime>? createdAt}) {
     return UsersCompanion(
@@ -573,7 +575,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       email: email ?? this.email,
       password: password ?? this.password,
       refreshtoken: refreshtoken ?? this.refreshtoken,
-      activationLink: activationLink ?? this.activationLink,
+      activation: activation ?? this.activation,
       isActivated: isActivated ?? this.isActivated,
       createdAt: createdAt ?? this.createdAt,
     );
@@ -597,8 +599,8 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (refreshtoken.present) {
       map['refreshtoken'] = Variable<String>(refreshtoken.value);
     }
-    if (activationLink.present) {
-      map['activation_link'] = Variable<String>(activationLink.value);
+    if (activation.present) {
+      map['activation'] = Variable<String>(activation.value);
     }
     if (isActivated.present) {
       map['is_activated'] = Variable<bool>(isActivated.value);
@@ -618,7 +620,7 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('email: $email, ')
           ..write('password: $password, ')
           ..write('refreshtoken: $refreshtoken, ')
-          ..write('activationLink: $activationLink, ')
+          ..write('activation: $activation, ')
           ..write('isActivated: $isActivated, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
@@ -746,7 +748,7 @@ typedef $$UsersTableInsertCompanionBuilder = UsersCompanion Function({
   required String email,
   required String password,
   required String refreshtoken,
-  required String activationLink,
+  required String activation,
   Value<bool> isActivated,
   Value<PgDateTime> createdAt,
 });
@@ -756,7 +758,7 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<String> email,
   Value<String> password,
   Value<String> refreshtoken,
-  Value<String> activationLink,
+  Value<String> activation,
   Value<bool> isActivated,
   Value<PgDateTime> createdAt,
 });
@@ -785,7 +787,7 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<String> email = const Value.absent(),
             Value<String> password = const Value.absent(),
             Value<String> refreshtoken = const Value.absent(),
-            Value<String> activationLink = const Value.absent(),
+            Value<String> activation = const Value.absent(),
             Value<bool> isActivated = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
           }) =>
@@ -795,7 +797,7 @@ class $$UsersTableTableManager extends RootTableManager<
             email: email,
             password: password,
             refreshtoken: refreshtoken,
-            activationLink: activationLink,
+            activation: activation,
             isActivated: isActivated,
             createdAt: createdAt,
           ),
@@ -805,7 +807,7 @@ class $$UsersTableTableManager extends RootTableManager<
             required String email,
             required String password,
             required String refreshtoken,
-            required String activationLink,
+            required String activation,
             Value<bool> isActivated = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
           }) =>
@@ -815,7 +817,7 @@ class $$UsersTableTableManager extends RootTableManager<
             email: email,
             password: password,
             refreshtoken: refreshtoken,
-            activationLink: activationLink,
+            activation: activation,
             isActivated: isActivated,
             createdAt: createdAt,
           ),
@@ -862,8 +864,8 @@ class $$UsersTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ColumnFilters<String> get activationLink => $state.composableBuilder(
-      column: $state.table.activationLink,
+  ColumnFilters<String> get activation => $state.composableBuilder(
+      column: $state.table.activation,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -906,8 +908,8 @@ class $$UsersTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
-  ColumnOrderings<String> get activationLink => $state.composableBuilder(
-      column: $state.table.activationLink,
+  ColumnOrderings<String> get activation => $state.composableBuilder(
+      column: $state.table.activation,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

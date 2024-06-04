@@ -8,11 +8,13 @@ import 'package:shelf_router/shelf_router.dart';
 
 class AuthRoute extends ServerRoute {
   AuthRoute({
+    required this.authMiddleware,
     required this.controller,
     super.middlewares,
   });
 
   final AuthController controller;
+  final Middleware authMiddleware;
 
   @override
   String get name => 'auth';
@@ -27,11 +29,19 @@ class AuthRoute extends ServerRoute {
 
     final Middleware regValidator = validatorMiddleware(bodyParams: regParams);
 
+    const loginParams = <ValidatorParameter<String>>[
+      ValidatorParameter(name: 'email'),
+      ValidatorParameter(name: 'password'),
+    ];
+
+    final Middleware loginValidator =
+        validatorMiddleware(bodyParams: loginParams);
+
     return router
-      ..get('/', controller.root)
+      ..getMw('/', controller.root, [authMiddleware])
       ..get('/refresh', controller.refresh)
-      ..post('/activation', controller.activation)
-      ..post('/login', controller.login)
+      ..get('/activation/<activation>', controller.activation)
+      ..postMw('/login', controller.login, [loginValidator])
       ..postMw('/register', controller.register, [regValidator]);
   }
 }

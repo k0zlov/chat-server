@@ -8,6 +8,7 @@ Middleware errorMiddleware() {
       try {
         return await innerHandler(request);
       } on ApiException catch (e) {
+        print(e);
         return e.toResponse();
       } on InvalidDataException catch (e) {
         print(e);

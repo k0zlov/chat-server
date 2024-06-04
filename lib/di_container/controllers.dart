@@ -9,6 +9,7 @@ void _controllers() {
       () => AuthControllerImpl(
         database: getIt(),
         tokenService: getIt(),
+        mailService: getIt(),
       ),
     );
 }

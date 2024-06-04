@@ -12,7 +12,7 @@ class Users extends Table {
 
   TextColumn get refreshtoken => text().unique()();
 
-  TextColumn get activationLink => text()();
+  TextColumn get activation => text().unique()();
 
   BoolColumn get isActivated => boolean().withDefault(const Constant(false))();
 

@@ -2,11 +2,13 @@ import 'dart:convert';
 
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/exceptions/api_error.dart';
+import 'package:chat_server/services/mail_service.dart';
 import 'package:chat_server/services/token_service.dart';
 import 'package:chat_server/utils/cookie.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
 import 'package:shelf/shelf.dart';
+import 'package:uuid/v4.dart';
 
 abstract interface class AuthController {
   Future<Response> root(Request request);
@@ -15,7 +17,7 @@ abstract interface class AuthController {
 
   Future<Response> login(Request request);
 
-  Future<Response> activation(Request request);
+  Future<Response> activation(Request request, String id);
 
   Future<Response> refresh(Request request);
 }
@@ -24,27 +26,107 @@ class AuthControllerImpl implements AuthController {
   const AuthControllerImpl({
     required this.database,
     required this.tokenService,
+    required this.mailService,
   });
 
   final Database database;
   final TokenService tokenService;
+  final MailService mailService;
 
   @override
   Future<Response> root(Request request) async {
-    // TODO: implement root
-    throw UnimplementedError();
+    final int userId = request.context['userId']! as int;
+
+    final User? user = await (database.users.select()
+          ..where((tbl) => tbl.id.equals(userId)))
+        .getSingleOrNull();
+
+    if (user == null) {
+      const errorMessage = 'User with such id was not found';
+      throw const ApiException.unauthorized(errorMessage);
+    }
+
+    final Map<String, dynamic> response = {
+      ...user.toJson(),
+      'createdAt': user.createdAt.dateTime.toIso8601String(),
+    };
+
+    return Response.ok(jsonEncode(response));
   }
 
   @override
-  Future<Response> activation(Request request) async {
-    // TODO: implement activation
-    throw UnimplementedError();
+  Future<Response> activation(Request request, String activation) async {
+    final User? user = await (database.users.select()
+          ..where((tbl) => tbl.activation.equals(activation)))
+        .getSingleOrNull();
+
+    if (user == null) {
+      const errorMessage = 'There is no user with such activation link';
+      throw const ApiException.badRequest(errorMessage);
+    }
+
+    if (user.isActivated) {
+      return Response.ok('Already activated');
+    }
+
+    final User newUser = user.copyWith(isActivated: true);
+
+    final int result = await (database.users.update()
+          ..whereSamePrimaryKey(user))
+        .write(newUser);
+
+    if (result == 0) {
+      const errorMessage = 'Could not activate user';
+      throw const ApiException.internalServerError(errorMessage);
+    }
+
+    return Response.ok('Successfully activated');
   }
 
   @override
   Future<Response> login(Request request) async {
-    // TODO: implement login
-    throw UnimplementedError();
+    final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
+      request,
+    );
+
+    final String email = body['email'] as String;
+    final String password = body['password'] as String;
+
+    final User? user = await (database.users.select()
+          ..where((tbl) => tbl.email.equals(email)))
+        .getSingleOrNull();
+
+    if (user == null) {
+      const errorMessage = 'There is no user with such email';
+      throw const ApiException.badRequest(errorMessage);
+    }
+
+    if (user.password != password) {
+      const errorMessage = 'Wrong password';
+      throw const ApiException.badRequest(errorMessage);
+    }
+
+    final String refreshToken = tokenService.generateRefreshToken(user.id);
+    final String accessToken = tokenService.generateAccessToken(user.id);
+
+    final User newUser = user.copyWith(refreshtoken: refreshToken);
+
+    final result = await (database.users.update()..whereSamePrimaryKey(user))
+        .write(newUser);
+
+    if (result == 0) {
+      const errorMessage = 'Could not refresh tokens';
+      throw const ApiException.internalServerError(errorMessage);
+    }
+
+    await mailService.sendInformationLetter(email: email);
+
+    final Map<String, String> response = {
+      'refreshToken': refreshToken,
+      'accessToken': accessToken,
+    };
+
+    return Response.ok(jsonEncode(response));
   }
 
   @override
@@ -101,7 +183,7 @@ class AuthControllerImpl implements AuthController {
         .getSingle();
 
     if (count > 0) {
-      const errorMessage = 'User with such email already exists.';
+      const errorMessage = 'User with such email already exists';
       throw const ApiException.badRequest(errorMessage);
     }
 
@@ -111,17 +193,28 @@ class AuthControllerImpl implements AuthController {
         password: Value(password),
         email: Value(email),
         refreshtoken: const Value(''),
-        activationLink: const Value(''),
+        activation: const Value(''),
       ),
     );
+
     final String accessToken = tokenService.generateAccessToken(user.id);
 
     final String refreshToken = tokenService.generateRefreshToken(user.id);
 
-    final User newUser = user.copyWith(refreshtoken: refreshToken);
+    final String activation = const UuidV4().generate();
+
+    final User newUser = user.copyWith(
+      refreshtoken: refreshToken,
+      activation: activation,
+    );
 
     await (database.users.update()..where((tbl) => tbl.id.equals(user.id)))
         .write(newUser);
+
+    await mailService.sendActivationLetter(
+      email: email,
+      activationId: newUser.activation,
+    );
 
     final Map<String, dynamic> response = {
       'accessToken': accessToken,
