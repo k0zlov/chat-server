@@ -72,4 +72,15 @@ class RequestValidator {
 
     return queryParams;
   }
+
+  static Map<String, dynamic> getBodyFromContext(Request request) {
+    try {
+      final body = request.context['body']! as Map<String, dynamic>;
+      return body;
+    } catch (e) {
+      const errorMessage = 'Could not get request body from context';
+
+      throw const ApiException.internalServerError(errorMessage);
+    }
+  }
 }

@@ -38,7 +38,6 @@ class PostsControllerImpl implements PostsController {
       for (final Post post in posts) {
         jsonPosts.add(post.toJson());
       }
-
       return Response.ok(jsonEncode(posts));
     } catch (e) {
       const String errorMessage = 'Could not receive data from database';
@@ -49,14 +48,8 @@ class PostsControllerImpl implements PostsController {
 
   @override
   Future<Response> addPost(Request request) async {
-    const List<ValidatorParameter<String>> parameters = [
-      ValidatorParameter(name: 'subject'),
-      ValidatorParameter(name: 'content', nullable: true),
-    ];
-
-    final Map<String, dynamic> body = await RequestValidator.validateReqBody(
+    final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
       request,
-      requiredParams: parameters,
     );
 
     final String subject = body['subject'] as String;
@@ -81,16 +74,14 @@ class PostsControllerImpl implements PostsController {
 
   @override
   Future<Response> removePost(Request request) async {
-    final Map<String, String> queryParams = RequestValidator.validateReqParams(
-      request,
-      requiredParams: ['id'],
-    );
+    final Map<String, String> queryParams = request.url.queryParameters;
 
-    dynamic id = queryParams['id'];
+    final String rawId = queryParams['id']!;
+
+    final int id;
 
     try {
-      id = int.parse(id as String);
-      id as int;
+      id = int.parse(rawId);
     } catch (e) {
       const String errorMessage = 'The Query parameter id has an invalid type.';
       throw const ApiException.badRequest(errorMessage);

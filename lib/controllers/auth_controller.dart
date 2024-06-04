@@ -56,7 +56,7 @@ class AuthControllerImpl implements AuthController {
       throw const ApiException.unauthorized(errorMessage);
     }
 
-    if(!tokenService.validateRefreshToken(token)) {
+    if (!tokenService.validateRefreshToken(token)) {
       const errorMessage = 'Refresh token is not valid';
       throw const ApiException.unauthorized(errorMessage);
     }
@@ -88,15 +88,8 @@ class AuthControllerImpl implements AuthController {
 
   @override
   Future<Response> register(Request request) async {
-    const List<ValidatorParameter<String>> params = [
-      ValidatorParameter(name: 'name'),
-      ValidatorParameter(name: 'email'),
-      ValidatorParameter(name: 'password'),
-    ];
-
-    final Map<String, dynamic> body = await RequestValidator.validateReqBody(
+    final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
       request,
-      requiredParams: params,
     );
 
     final String name = body['name'] as String;
@@ -131,9 +124,8 @@ class AuthControllerImpl implements AuthController {
         .write(newUser);
 
     final Map<String, dynamic> response = {
-      ...newUser.toJson(),
       'accessToken': accessToken,
-      'createdAt': newUser.createdAt.dateTime.toIso8601String(),
+      'refreshToken': refreshToken,
     };
 
     return Response.ok(jsonEncode(response));
