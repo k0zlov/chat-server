@@ -72,11 +72,9 @@ class AuthControllerImpl implements AuthController {
 
     final User newUser = user.copyWith(isActivated: true);
 
-    final int result = await (database.users.update()
-          ..whereSamePrimaryKey(user))
-        .write(newUser);
+    final bool result = await database.users.update().replace(newUser);
 
-    if (result == 0) {
+    if (!result) {
       const errorMessage = 'Could not activate user';
       throw const ApiException.internalServerError(errorMessage);
     }
@@ -112,10 +110,9 @@ class AuthControllerImpl implements AuthController {
 
     final User newUser = user.copyWith(refreshtoken: refreshToken);
 
-    final result = await (database.users.update()..whereSamePrimaryKey(user))
-        .write(newUser);
+    final bool result = await database.users.update().replace(newUser);
 
-    if (result == 0) {
+    if (!result) {
       const errorMessage = 'Could not refresh tokens';
       throw const ApiException.internalServerError(errorMessage);
     }
@@ -158,8 +155,7 @@ class AuthControllerImpl implements AuthController {
 
     final User newUser = user.copyWith(refreshtoken: refreshToken);
 
-    await (database.users.update()..where((tbl) => tbl.id.equals(user.id)))
-        .write(newUser);
+    await database.users.update().replace(newUser);
 
     final Map<String, dynamic> responseBody = {
       'refreshToken': refreshToken,
@@ -209,8 +205,7 @@ class AuthControllerImpl implements AuthController {
       activation: activation,
     );
 
-    await (database.users.update()..where((tbl) => tbl.id.equals(user.id)))
-        .write(newUser);
+    await database.users.update().replace(newUser);
 
     unawaited(
       mailService.sendActivationLetter(
