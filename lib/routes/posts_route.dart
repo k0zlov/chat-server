@@ -37,7 +37,7 @@ class PostsRoute extends ServerRoute {
     );
 
     return router
-      ..get('/', controller.getPosts)
+      ..get('/', controller.getAll)
       ..postMw('/add', controller.addPost, [authMiddleware, addValidator])
       ..deleteMw(
         '/remove',
