@@ -1,4 +1,4 @@
-import 'package:chat_server/controllers/contacts_controller.dart';
+import 'package:chat_server/controllers/contacts_controller/contacts_controller.dart';
 import 'package:chat_server/middleware/middleware_extension.dart';
 import 'package:chat_server/middleware/validator_middleware.dart';
 import 'package:chat_server/routes/server_route.dart';

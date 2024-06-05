@@ -1,4 +1,4 @@
-import 'package:chat_server/controllers/auth_controller.dart';
+import 'package:chat_server/controllers/auth_controller/auth_controller.dart';
 import 'package:chat_server/middleware/middleware_extension.dart';
 import 'package:chat_server/middleware/validator_middleware.dart';
 import 'package:chat_server/routes/server_route.dart';

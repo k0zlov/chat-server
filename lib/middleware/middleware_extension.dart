@@ -56,4 +56,17 @@ extension MiddlwareExtensions on Router {
       middlewares: middlewares,
     );
   }
+
+  void putMw(
+    String route,
+    Handler handler,
+    List<Middleware> middlewares,
+  ) {
+    addMw(
+      'PUT',
+      route,
+      handler: handler,
+      middlewares: middlewares,
+    );
+  }
 }

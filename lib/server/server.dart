@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:chat_server/exceptions/api_error.dart';
+import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/routes/server_route.dart';
 import 'package:chat_server/server/server_config.dart';
 import 'package:shelf/shelf.dart';

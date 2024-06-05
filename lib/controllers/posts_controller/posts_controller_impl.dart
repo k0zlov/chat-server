@@ -1,22 +1,11 @@
 import 'dart:convert';
 
+import 'package:chat_server/controllers/posts_controller/posts_controller.dart';
 import 'package:chat_server/database/database.dart';
-import 'package:chat_server/exceptions/api_error.dart';
+import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
 import 'package:shelf/shelf.dart';
-
-/// An abstract interface for handling post-related HTTP requests.
-abstract interface class PostsController {
-  /// Handles the root endpoint, typically returning a list of posts.
-  Future<Response> getAll(Request request);
-
-  /// Handles the addition of a new post.
-  Future<Response> addPost(Request request);
-
-  /// Handles the removal of an existing post.
-  Future<Response> removePost(Request request);
-}
 
 /// Implementation of [PostsController] for managing posts.
 class PostsControllerImpl implements PostsController {

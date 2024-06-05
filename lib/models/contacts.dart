@@ -4,10 +4,12 @@ import 'package:drift_postgres/drift_postgres.dart';
 
 class Contacts extends Table {
   @ReferenceName('contactOwners')
-  IntColumn get userId => integer().references(Users, #id)();
+  IntColumn get userId =>
+      integer().references(Users, #id, onDelete: KeyAction.cascade)();
 
   @ReferenceName('contactTargets')
-  IntColumn get contactUserId => integer().references(Users, #id)();
+  IntColumn get contactUserId =>
+      integer().references(Users, #id, onDelete: KeyAction.cascade)();
 
   TimestampColumn get addedAt =>
       customType(PgTypes.timestampWithTimezone).withDefault(

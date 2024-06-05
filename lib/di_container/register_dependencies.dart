@@ -1,14 +1,20 @@
 import 'dart:io';
 
 import 'package:aws_sesv2_api/sesv2-2019-09-27.dart';
-import 'package:chat_server/controllers/auth_controller.dart';
-import 'package:chat_server/controllers/contacts_controller.dart';
-import 'package:chat_server/controllers/posts_controller.dart';
+import 'package:chat_server/controllers/auth_controller/auth_controller.dart';
+import 'package:chat_server/controllers/auth_controller/auth_controller_impl.dart';
+import 'package:chat_server/controllers/chats_controller/chats_controller.dart';
+import 'package:chat_server/controllers/chats_controller/chats_controller_impl.dart';
+import 'package:chat_server/controllers/contacts_controller/contacts_controller.dart';
+import 'package:chat_server/controllers/contacts_controller/contacts_controller_impl.dart';
+import 'package:chat_server/controllers/posts_controller/posts_controller.dart';
+import 'package:chat_server/controllers/posts_controller/posts_controller_impl.dart';
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/middleware/auth_middleware.dart';
 import 'package:chat_server/middleware/error_middleware.dart';
 import 'package:chat_server/middleware/headers_middleware.dart';
 import 'package:chat_server/routes/auth_route.dart';
+import 'package:chat_server/routes/chats_route.dart';
 import 'package:chat_server/routes/contacts_route.dart';
 import 'package:chat_server/routes/posts_route.dart';
 import 'package:chat_server/routes/server_route.dart';
@@ -62,6 +68,7 @@ ChatServer _server() {
       getIt(instanceName: 'posts-route'),
       getIt(instanceName: 'auth-route'),
       getIt(instanceName: 'contacts-route'),
+      getIt(instanceName: 'chats-route'),
     ],
     middlewares: <Middleware>[
       getIt(instanceName: 'headers-middleware'),

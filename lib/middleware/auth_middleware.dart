@@ -1,4 +1,4 @@
-import 'package:chat_server/exceptions/api_error.dart';
+import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/services/token_service.dart';
 import 'package:shelf/shelf.dart';
 

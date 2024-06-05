@@ -1,20 +1,11 @@
 import 'dart:convert';
 
+import 'package:chat_server/controllers/contacts_controller/contacts_controller.dart';
 import 'package:chat_server/database/database.dart';
-import 'package:chat_server/exceptions/api_error.dart';
+import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
 import 'package:shelf/shelf.dart';
-
-abstract interface class ContactsController {
-  Future<Response> getAll(Request request);
-
-  Future<Response> add(Request request);
-
-  Future<Response> remove(Request request);
-
-  Future<Response> search(Request request);
-}
 
 class ContactsControllerImpl implements ContactsController {
   const ContactsControllerImpl({

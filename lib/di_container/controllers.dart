@@ -14,5 +14,8 @@ void _controllers() {
     )
     ..registerLazySingleton<ContactsController>(
       () => ContactsControllerImpl(database: getIt()),
+    )
+    ..registerLazySingleton<ChatsController>(
+      () => ChatsControllerImpl(database: getIt()),
     );
 }

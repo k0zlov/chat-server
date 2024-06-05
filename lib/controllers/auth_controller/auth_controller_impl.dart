@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:chat_server/controllers/auth_controller/auth_controller.dart';
+
 import 'package:chat_server/database/database.dart';
-import 'package:chat_server/exceptions/api_error.dart';
+import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/services/mail_service.dart';
 import 'package:chat_server/services/token_service.dart';
 import 'package:chat_server/utils/cookie.dart';
@@ -10,20 +12,6 @@ import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
 import 'package:shelf/shelf.dart';
 import 'package:uuid/v4.dart';
-
-abstract interface class AuthController {
-  Future<Response> getUser(Request request);
-
-  Future<Response> register(Request request);
-
-  Future<Response> login(Request request);
-
-  Future<Response> logout(Request request);
-
-  Future<Response> activation(Request request, String id);
-
-  Future<Response> refresh(Request request);
-}
 
 class AuthControllerImpl implements AuthController {
   const AuthControllerImpl({
@@ -41,7 +29,7 @@ class AuthControllerImpl implements AuthController {
     final int userId = request.context['userId']! as int;
 
     final User? user = await (database.users.select()
-          ..where((tbl) => tbl.id.equals(userId)))
+      ..where((tbl) => tbl.id.equals(userId)))
         .getSingleOrNull();
 
     if (user == null) {
@@ -60,7 +48,7 @@ class AuthControllerImpl implements AuthController {
   @override
   Future<Response> activation(Request request, String activation) async {
     final User? user = await (database.users.select()
-          ..where((tbl) => tbl.activation.equals(activation)))
+      ..where((tbl) => tbl.activation.equals(activation)))
         .getSingleOrNull();
 
     if (user == null) {
@@ -94,7 +82,7 @@ class AuthControllerImpl implements AuthController {
     final String password = body['password'] as String;
 
     final User? user = await (database.users.select()
-          ..where((tbl) => tbl.email.equals(email)))
+      ..where((tbl) => tbl.email.equals(email)))
         .getSingleOrNull();
 
     if (user == null) {
@@ -144,7 +132,7 @@ class AuthControllerImpl implements AuthController {
     }
 
     final User? user = await (database.users.select()
-          ..where((tbl) => tbl.refreshToken.equals(token)))
+      ..where((tbl) => tbl.refreshToken.equals(token)))
         .getSingleOrNull();
 
     if (user == null) {
@@ -229,7 +217,7 @@ class AuthControllerImpl implements AuthController {
     final int userId = request.context['userId']! as int;
 
     final User? user = await (database.users.select()
-          ..where((tbl) => tbl.id.equals(userId)))
+      ..where((tbl) => tbl.id.equals(userId)))
         .getSingleOrNull();
 
     if (user == null) {

@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:chat_server/exceptions/api_error.dart';
+import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:shelf/shelf.dart';
 
 class ValidatorParameter<T> {

@@ -642,21 +642,25 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
       requiredDuringInsert: false,
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
-  static const VerificationMeta _ownerIdMeta =
-      const VerificationMeta('ownerId');
-  @override
-  late final GeneratedColumn<int> ownerId = GeneratedColumn<int>(
-      'owner_id', aliasedName, false,
-      type: DriftSqlType.int,
-      requiredDuringInsert: true,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
   static const VerificationMeta _typeMeta = const VerificationMeta('type');
   @override
   late final GeneratedColumnWithTypeConverter<ChatType, String> type =
       GeneratedColumn<String>('type', aliasedName, false,
-              type: DriftSqlType.string, requiredDuringInsert: true)
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(ChatType.group.name))
           .withConverter<ChatType>($ChatsTable.$convertertype);
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+      'title', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _descriptionMeta =
+      const VerificationMeta('description');
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+      'description', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -666,7 +670,8 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
           requiredDuringInsert: false,
           defaultValue: const FunctionCallExpression('now', []));
   @override
-  List<GeneratedColumn> get $columns => [id, ownerId, type, createdAt];
+  List<GeneratedColumn> get $columns =>
+      [id, type, title, description, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -680,13 +685,19 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
     if (data.containsKey('id')) {
       context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
     }
-    if (data.containsKey('owner_id')) {
-      context.handle(_ownerIdMeta,
-          ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta));
-    } else if (isInserting) {
-      context.missing(_ownerIdMeta);
-    }
     context.handle(_typeMeta, const VerificationResult.success());
+    if (data.containsKey('title')) {
+      context.handle(
+          _titleMeta, title.isAcceptableOrUnknown(data['title']!, _titleMeta));
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+          _descriptionMeta,
+          description.isAcceptableOrUnknown(
+              data['description']!, _descriptionMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -702,10 +713,12 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
     return Chat(
       id: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
-      ownerId: attachedDatabase.typeMapping
-          .read(DriftSqlType.int, data['${effectivePrefix}owner_id'])!,
       type: $ChatsTable.$convertertype.fromSql(attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}type'])!),
+      title: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
+      description: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}description']),
       createdAt: attachedDatabase.typeMapping.read(
           PgTypes.timestampWithTimezone, data['${effectivePrefix}created_at'])!,
     );
@@ -722,21 +735,26 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
 
 class Chat extends DataClass implements Insertable<Chat> {
   final int id;
-  final int ownerId;
   final ChatType type;
+  final String title;
+  final String? description;
   final PgDateTime createdAt;
   const Chat(
       {required this.id,
-      required this.ownerId,
       required this.type,
+      required this.title,
+      this.description,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
-    map['owner_id'] = Variable<int>(ownerId);
     {
       map['type'] = Variable<String>($ChatsTable.$convertertype.toSql(type));
+    }
+    map['title'] = Variable<String>(title);
+    if (!nullToAbsent || description != null) {
+      map['description'] = Variable<String>(description);
     }
     map['created_at'] =
         Variable<PgDateTime>(createdAt, PgTypes.timestampWithTimezone);
@@ -746,8 +764,11 @@ class Chat extends DataClass implements Insertable<Chat> {
   ChatsCompanion toCompanion(bool nullToAbsent) {
     return ChatsCompanion(
       id: Value(id),
-      ownerId: Value(ownerId),
       type: Value(type),
+      title: Value(title),
+      description: description == null && nullToAbsent
+          ? const Value.absent()
+          : Value(description),
       createdAt: Value(createdAt),
     );
   }
@@ -757,9 +778,10 @@ class Chat extends DataClass implements Insertable<Chat> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return Chat(
       id: serializer.fromJson<int>(json['id']),
-      ownerId: serializer.fromJson<int>(json['ownerId']),
       type: $ChatsTable.$convertertype
           .fromJson(serializer.fromJson<String>(json['type'])),
+      title: serializer.fromJson<String>(json['title']),
+      description: serializer.fromJson<String?>(json['description']),
       createdAt: serializer.fromJson<PgDateTime>(json['createdAt']),
     );
   }
@@ -768,85 +790,99 @@ class Chat extends DataClass implements Insertable<Chat> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
-      'ownerId': serializer.toJson<int>(ownerId),
       'type':
           serializer.toJson<String>($ChatsTable.$convertertype.toJson(type)),
+      'title': serializer.toJson<String>(title),
+      'description': serializer.toJson<String?>(description),
       'createdAt': serializer.toJson<PgDateTime>(createdAt),
     };
   }
 
   Chat copyWith(
-          {int? id, int? ownerId, ChatType? type, PgDateTime? createdAt}) =>
+          {int? id,
+          ChatType? type,
+          String? title,
+          Value<String?> description = const Value.absent(),
+          PgDateTime? createdAt}) =>
       Chat(
         id: id ?? this.id,
-        ownerId: ownerId ?? this.ownerId,
         type: type ?? this.type,
+        title: title ?? this.title,
+        description: description.present ? description.value : this.description,
         createdAt: createdAt ?? this.createdAt,
       );
   @override
   String toString() {
     return (StringBuffer('Chat(')
           ..write('id: $id, ')
-          ..write('ownerId: $ownerId, ')
           ..write('type: $type, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, ownerId, type, createdAt);
+  int get hashCode => Object.hash(id, type, title, description, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Chat &&
           other.id == this.id &&
-          other.ownerId == this.ownerId &&
           other.type == this.type &&
+          other.title == this.title &&
+          other.description == this.description &&
           other.createdAt == this.createdAt);
 }
 
 class ChatsCompanion extends UpdateCompanion<Chat> {
   final Value<int> id;
-  final Value<int> ownerId;
   final Value<ChatType> type;
+  final Value<String> title;
+  final Value<String?> description;
   final Value<PgDateTime> createdAt;
   const ChatsCompanion({
     this.id = const Value.absent(),
-    this.ownerId = const Value.absent(),
     this.type = const Value.absent(),
+    this.title = const Value.absent(),
+    this.description = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   ChatsCompanion.insert({
     this.id = const Value.absent(),
-    required int ownerId,
-    required ChatType type,
+    this.type = const Value.absent(),
+    required String title,
+    this.description = const Value.absent(),
     this.createdAt = const Value.absent(),
-  })  : ownerId = Value(ownerId),
-        type = Value(type);
+  }) : title = Value(title);
   static Insertable<Chat> custom({
     Expression<int>? id,
-    Expression<int>? ownerId,
     Expression<String>? type,
+    Expression<String>? title,
+    Expression<String>? description,
     Expression<PgDateTime>? createdAt,
   }) {
     return RawValuesInsertable({
       if (id != null) 'id': id,
-      if (ownerId != null) 'owner_id': ownerId,
       if (type != null) 'type': type,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
 
   ChatsCompanion copyWith(
       {Value<int>? id,
-      Value<int>? ownerId,
       Value<ChatType>? type,
+      Value<String>? title,
+      Value<String?>? description,
       Value<PgDateTime>? createdAt}) {
     return ChatsCompanion(
       id: id ?? this.id,
-      ownerId: ownerId ?? this.ownerId,
       type: type ?? this.type,
+      title: title ?? this.title,
+      description: description ?? this.description,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -857,12 +893,15 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     if (id.present) {
       map['id'] = Variable<int>(id.value);
     }
-    if (ownerId.present) {
-      map['owner_id'] = Variable<int>(ownerId.value);
-    }
     if (type.present) {
       map['type'] =
           Variable<String>($ChatsTable.$convertertype.toSql(type.value));
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
     }
     if (createdAt.present) {
       map['created_at'] =
@@ -875,8 +914,9 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
   String toString() {
     return (StringBuffer('ChatsCompanion(')
           ..write('id: $id, ')
-          ..write('ownerId: $ownerId, ')
           ..write('type: $type, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -894,8 +934,8 @@ class $ContactsTable extends Contacts with TableInfo<$ContactsTable, Contact> {
       'user_id', aliasedName, false,
       type: DriftSqlType.int,
       requiredDuringInsert: true,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES users (id) ON DELETE CASCADE'));
   static const VerificationMeta _contactUserIdMeta =
       const VerificationMeta('contactUserId');
   @override
@@ -903,8 +943,8 @@ class $ContactsTable extends Contacts with TableInfo<$ContactsTable, Contact> {
       'contact_user_id', aliasedName, false,
       type: DriftSqlType.int,
       requiredDuringInsert: true,
-      defaultConstraints:
-          GeneratedColumn.constraintIsAlways('REFERENCES users (id)'));
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES users (id) ON DELETE CASCADE'));
   static const VerificationMeta _addedAtMeta =
       const VerificationMeta('addedAt');
   @override
@@ -1115,6 +1155,283 @@ class ContactsCompanion extends UpdateCompanion<Contact> {
   }
 }
 
+class $ChatParticipantsTable extends ChatParticipants
+    with TableInfo<$ChatParticipantsTable, ChatParticipant> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ChatParticipantsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<int> chatId = GeneratedColumn<int>(
+      'chat_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES chats (id) ON DELETE CASCADE'));
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES users (id) ON DELETE CASCADE'));
+  static const VerificationMeta _roleMeta = const VerificationMeta('role');
+  @override
+  late final GeneratedColumnWithTypeConverter<ChatParticipantRole, String>
+      role = GeneratedColumn<String>('role', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(ChatParticipantRole.member.name))
+          .withConverter<ChatParticipantRole>(
+              $ChatParticipantsTable.$converterrole);
+  static const VerificationMeta _joinedAtMeta =
+      const VerificationMeta('joinedAt');
+  @override
+  late final GeneratedColumn<PgDateTime> joinedAt = GeneratedColumn<PgDateTime>(
+      'joined_at', aliasedName, false,
+      type: PgTypes.timestampWithTimezone,
+      requiredDuringInsert: false,
+      defaultValue: const FunctionCallExpression('now', []));
+  @override
+  List<GeneratedColumn> get $columns => [chatId, userId, role, joinedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'chat_participants';
+  @override
+  VerificationContext validateIntegrity(Insertable<ChatParticipant> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chat_id')) {
+      context.handle(_chatIdMeta,
+          chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta));
+    } else if (isInserting) {
+      context.missing(_chatIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    context.handle(_roleMeta, const VerificationResult.success());
+    if (data.containsKey('joined_at')) {
+      context.handle(_joinedAtMeta,
+          joinedAt.isAcceptableOrUnknown(data['joined_at']!, _joinedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chatId, userId};
+  @override
+  ChatParticipant map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ChatParticipant(
+      chatId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chat_id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}user_id'])!,
+      role: $ChatParticipantsTable.$converterrole.fromSql(attachedDatabase
+          .typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}role'])!),
+      joinedAt: attachedDatabase.typeMapping.read(
+          PgTypes.timestampWithTimezone, data['${effectivePrefix}joined_at'])!,
+    );
+  }
+
+  @override
+  $ChatParticipantsTable createAlias(String alias) {
+    return $ChatParticipantsTable(attachedDatabase, alias);
+  }
+
+  static JsonTypeConverter2<ChatParticipantRole, String, String>
+      $converterrole =
+      const EnumNameConverter<ChatParticipantRole>(ChatParticipantRole.values);
+}
+
+class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
+  final int chatId;
+  final int userId;
+  final ChatParticipantRole role;
+  final PgDateTime joinedAt;
+  const ChatParticipant(
+      {required this.chatId,
+      required this.userId,
+      required this.role,
+      required this.joinedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chat_id'] = Variable<int>(chatId);
+    map['user_id'] = Variable<int>(userId);
+    {
+      map['role'] =
+          Variable<String>($ChatParticipantsTable.$converterrole.toSql(role));
+    }
+    map['joined_at'] =
+        Variable<PgDateTime>(joinedAt, PgTypes.timestampWithTimezone);
+    return map;
+  }
+
+  ChatParticipantsCompanion toCompanion(bool nullToAbsent) {
+    return ChatParticipantsCompanion(
+      chatId: Value(chatId),
+      userId: Value(userId),
+      role: Value(role),
+      joinedAt: Value(joinedAt),
+    );
+  }
+
+  factory ChatParticipant.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ChatParticipant(
+      chatId: serializer.fromJson<int>(json['chatId']),
+      userId: serializer.fromJson<int>(json['userId']),
+      role: $ChatParticipantsTable.$converterrole
+          .fromJson(serializer.fromJson<String>(json['role'])),
+      joinedAt: serializer.fromJson<PgDateTime>(json['joinedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chatId': serializer.toJson<int>(chatId),
+      'userId': serializer.toJson<int>(userId),
+      'role': serializer
+          .toJson<String>($ChatParticipantsTable.$converterrole.toJson(role)),
+      'joinedAt': serializer.toJson<PgDateTime>(joinedAt),
+    };
+  }
+
+  ChatParticipant copyWith(
+          {int? chatId,
+          int? userId,
+          ChatParticipantRole? role,
+          PgDateTime? joinedAt}) =>
+      ChatParticipant(
+        chatId: chatId ?? this.chatId,
+        userId: userId ?? this.userId,
+        role: role ?? this.role,
+        joinedAt: joinedAt ?? this.joinedAt,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('ChatParticipant(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId, ')
+          ..write('role: $role, ')
+          ..write('joinedAt: $joinedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(chatId, userId, role, joinedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ChatParticipant &&
+          other.chatId == this.chatId &&
+          other.userId == this.userId &&
+          other.role == this.role &&
+          other.joinedAt == this.joinedAt);
+}
+
+class ChatParticipantsCompanion extends UpdateCompanion<ChatParticipant> {
+  final Value<int> chatId;
+  final Value<int> userId;
+  final Value<ChatParticipantRole> role;
+  final Value<PgDateTime> joinedAt;
+  final Value<int> rowid;
+  const ChatParticipantsCompanion({
+    this.chatId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.role = const Value.absent(),
+    this.joinedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ChatParticipantsCompanion.insert({
+    required int chatId,
+    required int userId,
+    this.role = const Value.absent(),
+    this.joinedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : chatId = Value(chatId),
+        userId = Value(userId);
+  static Insertable<ChatParticipant> custom({
+    Expression<int>? chatId,
+    Expression<int>? userId,
+    Expression<String>? role,
+    Expression<PgDateTime>? joinedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chatId != null) 'chat_id': chatId,
+      if (userId != null) 'user_id': userId,
+      if (role != null) 'role': role,
+      if (joinedAt != null) 'joined_at': joinedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ChatParticipantsCompanion copyWith(
+      {Value<int>? chatId,
+      Value<int>? userId,
+      Value<ChatParticipantRole>? role,
+      Value<PgDateTime>? joinedAt,
+      Value<int>? rowid}) {
+    return ChatParticipantsCompanion(
+      chatId: chatId ?? this.chatId,
+      userId: userId ?? this.userId,
+      role: role ?? this.role,
+      joinedAt: joinedAt ?? this.joinedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chatId.present) {
+      map['chat_id'] = Variable<int>(chatId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (role.present) {
+      map['role'] = Variable<String>(
+          $ChatParticipantsTable.$converterrole.toSql(role.value));
+    }
+    if (joinedAt.present) {
+      map['joined_at'] =
+          Variable<PgDateTime>(joinedAt.value, PgTypes.timestampWithTimezone);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ChatParticipantsCompanion(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId, ')
+          ..write('role: $role, ')
+          ..write('joinedAt: $joinedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$Database extends GeneratedDatabase {
   _$Database(QueryExecutor e) : super(e);
   _$DatabaseManager get managers => _$DatabaseManager(this);
@@ -1122,12 +1439,47 @@ abstract class _$Database extends GeneratedDatabase {
   late final $UsersTable users = $UsersTable(this);
   late final $ChatsTable chats = $ChatsTable(this);
   late final $ContactsTable contacts = $ContactsTable(this);
+  late final $ChatParticipantsTable chatParticipants =
+      $ChatParticipantsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [posts, users, chats, contacts];
+      [posts, users, chats, contacts, chatParticipants];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
+        [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('users',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('contacts', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('users',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('contacts', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('chats',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('chat_participants', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('users',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('chat_participants', kind: UpdateKind.delete),
+            ],
+          ),
+        ],
+      );
 }
 
 typedef $$PostsTableInsertCompanionBuilder = PostsCompanion Function({
@@ -1369,19 +1721,6 @@ class $$UsersTableFilterComposer
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  ComposableFilter chatOwners(
-      ComposableFilter Function($$ChatsTableFilterComposer f) f) {
-    final $$ChatsTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.id,
-        referencedTable: $state.db.chats,
-        getReferencedColumn: (t) => t.ownerId,
-        builder: (joinBuilder, parentComposers) => $$ChatsTableFilterComposer(
-            ComposerState(
-                $state.db, $state.db.chats, joinBuilder, parentComposers)));
-    return f(composer);
-  }
-
   ComposableFilter contactOwners(
       ComposableFilter Function($$ContactsTableFilterComposer f) f) {
     final $$ContactsTableFilterComposer composer = $state.composerBuilder(
@@ -1405,6 +1744,20 @@ class $$UsersTableFilterComposer
         builder: (joinBuilder, parentComposers) =>
             $$ContactsTableFilterComposer(ComposerState(
                 $state.db, $state.db.contacts, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter chatParticipantUsers(
+      ComposableFilter Function($$ChatParticipantsTableFilterComposer f) f) {
+    final $$ChatParticipantsTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.chatParticipants,
+            getReferencedColumn: (t) => t.userId,
+            builder: (joinBuilder, parentComposers) =>
+                $$ChatParticipantsTableFilterComposer(ComposerState($state.db,
+                    $state.db.chatParticipants, joinBuilder, parentComposers)));
     return f(composer);
   }
 }
@@ -1455,14 +1808,16 @@ class $$UsersTableOrderingComposer
 
 typedef $$ChatsTableInsertCompanionBuilder = ChatsCompanion Function({
   Value<int> id,
-  required int ownerId,
-  required ChatType type,
+  Value<ChatType> type,
+  required String title,
+  Value<String?> description,
   Value<PgDateTime> createdAt,
 });
 typedef $$ChatsTableUpdateCompanionBuilder = ChatsCompanion Function({
   Value<int> id,
-  Value<int> ownerId,
   Value<ChatType> type,
+  Value<String> title,
+  Value<String?> description,
   Value<PgDateTime> createdAt,
 });
 
@@ -1486,26 +1841,30 @@ class $$ChatsTableTableManager extends RootTableManager<
           getChildManagerBuilder: (p) => $$ChatsTableProcessedTableManager(p),
           getUpdateCompanionBuilder: ({
             Value<int> id = const Value.absent(),
-            Value<int> ownerId = const Value.absent(),
             Value<ChatType> type = const Value.absent(),
+            Value<String> title = const Value.absent(),
+            Value<String?> description = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
           }) =>
               ChatsCompanion(
             id: id,
-            ownerId: ownerId,
             type: type,
+            title: title,
+            description: description,
             createdAt: createdAt,
           ),
           getInsertCompanionBuilder: ({
             Value<int> id = const Value.absent(),
-            required int ownerId,
-            required ChatType type,
+            Value<ChatType> type = const Value.absent(),
+            required String title,
+            Value<String?> description = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
           }) =>
               ChatsCompanion.insert(
             id: id,
-            ownerId: ownerId,
             type: type,
+            title: title,
+            description: description,
             createdAt: createdAt,
           ),
         ));
@@ -1538,21 +1897,33 @@ class $$ChatsTableFilterComposer
               column,
               joinBuilders: joinBuilders));
 
+  ColumnFilters<String> get title => $state.composableBuilder(
+      column: $state.table.title,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get description => $state.composableBuilder(
+      column: $state.table.description,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
   ColumnFilters<PgDateTime> get createdAt => $state.composableBuilder(
       column: $state.table.createdAt,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
-  $$UsersTableFilterComposer get ownerId {
-    final $$UsersTableFilterComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.ownerId,
-        referencedTable: $state.db.users,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder, parentComposers) => $$UsersTableFilterComposer(
-            ComposerState(
-                $state.db, $state.db.users, joinBuilder, parentComposers)));
-    return composer;
+  ComposableFilter chatParticipantChats(
+      ComposableFilter Function($$ChatParticipantsTableFilterComposer f) f) {
+    final $$ChatParticipantsTableFilterComposer composer =
+        $state.composerBuilder(
+            composer: this,
+            getCurrentColumn: (t) => t.id,
+            referencedTable: $state.db.chatParticipants,
+            getReferencedColumn: (t) => t.chatId,
+            builder: (joinBuilder, parentComposers) =>
+                $$ChatParticipantsTableFilterComposer(ComposerState($state.db,
+                    $state.db.chatParticipants, joinBuilder, parentComposers)));
+    return f(composer);
   }
 }
 
@@ -1569,22 +1940,20 @@ class $$ChatsTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
+  ColumnOrderings<String> get title => $state.composableBuilder(
+      column: $state.table.title,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get description => $state.composableBuilder(
+      column: $state.table.description,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
   ColumnOrderings<PgDateTime> get createdAt => $state.composableBuilder(
       column: $state.table.createdAt,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
-
-  $$UsersTableOrderingComposer get ownerId {
-    final $$UsersTableOrderingComposer composer = $state.composerBuilder(
-        composer: this,
-        getCurrentColumn: (t) => t.ownerId,
-        referencedTable: $state.db.users,
-        getReferencedColumn: (t) => t.id,
-        builder: (joinBuilder, parentComposers) => $$UsersTableOrderingComposer(
-            ComposerState(
-                $state.db, $state.db.users, joinBuilder, parentComposers)));
-    return composer;
-  }
 }
 
 typedef $$ContactsTableInsertCompanionBuilder = ContactsCompanion Function({
@@ -1724,6 +2093,166 @@ class $$ContactsTableOrderingComposer
   }
 }
 
+typedef $$ChatParticipantsTableInsertCompanionBuilder
+    = ChatParticipantsCompanion Function({
+  required int chatId,
+  required int userId,
+  Value<ChatParticipantRole> role,
+  Value<PgDateTime> joinedAt,
+  Value<int> rowid,
+});
+typedef $$ChatParticipantsTableUpdateCompanionBuilder
+    = ChatParticipantsCompanion Function({
+  Value<int> chatId,
+  Value<int> userId,
+  Value<ChatParticipantRole> role,
+  Value<PgDateTime> joinedAt,
+  Value<int> rowid,
+});
+
+class $$ChatParticipantsTableTableManager extends RootTableManager<
+    _$Database,
+    $ChatParticipantsTable,
+    ChatParticipant,
+    $$ChatParticipantsTableFilterComposer,
+    $$ChatParticipantsTableOrderingComposer,
+    $$ChatParticipantsTableProcessedTableManager,
+    $$ChatParticipantsTableInsertCompanionBuilder,
+    $$ChatParticipantsTableUpdateCompanionBuilder> {
+  $$ChatParticipantsTableTableManager(
+      _$Database db, $ChatParticipantsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          filteringComposer:
+              $$ChatParticipantsTableFilterComposer(ComposerState(db, table)),
+          orderingComposer:
+              $$ChatParticipantsTableOrderingComposer(ComposerState(db, table)),
+          getChildManagerBuilder: (p) =>
+              $$ChatParticipantsTableProcessedTableManager(p),
+          getUpdateCompanionBuilder: ({
+            Value<int> chatId = const Value.absent(),
+            Value<int> userId = const Value.absent(),
+            Value<ChatParticipantRole> role = const Value.absent(),
+            Value<PgDateTime> joinedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ChatParticipantsCompanion(
+            chatId: chatId,
+            userId: userId,
+            role: role,
+            joinedAt: joinedAt,
+            rowid: rowid,
+          ),
+          getInsertCompanionBuilder: ({
+            required int chatId,
+            required int userId,
+            Value<ChatParticipantRole> role = const Value.absent(),
+            Value<PgDateTime> joinedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ChatParticipantsCompanion.insert(
+            chatId: chatId,
+            userId: userId,
+            role: role,
+            joinedAt: joinedAt,
+            rowid: rowid,
+          ),
+        ));
+}
+
+class $$ChatParticipantsTableProcessedTableManager
+    extends ProcessedTableManager<
+        _$Database,
+        $ChatParticipantsTable,
+        ChatParticipant,
+        $$ChatParticipantsTableFilterComposer,
+        $$ChatParticipantsTableOrderingComposer,
+        $$ChatParticipantsTableProcessedTableManager,
+        $$ChatParticipantsTableInsertCompanionBuilder,
+        $$ChatParticipantsTableUpdateCompanionBuilder> {
+  $$ChatParticipantsTableProcessedTableManager(super.$state);
+}
+
+class $$ChatParticipantsTableFilterComposer
+    extends FilterComposer<_$Database, $ChatParticipantsTable> {
+  $$ChatParticipantsTableFilterComposer(super.$state);
+  ColumnWithTypeConverterFilters<ChatParticipantRole, ChatParticipantRole,
+          String>
+      get role => $state.composableBuilder(
+          column: $state.table.role,
+          builder: (column, joinBuilders) => ColumnWithTypeConverterFilters(
+              column,
+              joinBuilders: joinBuilders));
+
+  ColumnFilters<PgDateTime> get joinedAt => $state.composableBuilder(
+      column: $state.table.joinedAt,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  $$ChatsTableFilterComposer get chatId {
+    final $$ChatsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.chatId,
+        referencedTable: $state.db.chats,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$ChatsTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.chats, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
+class $$ChatParticipantsTableOrderingComposer
+    extends OrderingComposer<_$Database, $ChatParticipantsTable> {
+  $$ChatParticipantsTableOrderingComposer(super.$state);
+  ColumnOrderings<String> get role => $state.composableBuilder(
+      column: $state.table.role,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<PgDateTime> get joinedAt => $state.composableBuilder(
+      column: $state.table.joinedAt,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  $$ChatsTableOrderingComposer get chatId {
+    final $$ChatsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.chatId,
+        referencedTable: $state.db.chats,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$ChatsTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.chats, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
 class _$DatabaseManager {
   final _$Database _db;
   _$DatabaseManager(this._db);
@@ -1735,4 +2264,6 @@ class _$DatabaseManager {
       $$ChatsTableTableManager(_db, _db.chats);
   $$ContactsTableTableManager get contacts =>
       $$ContactsTableTableManager(_db, _db.contacts);
+  $$ChatParticipantsTableTableManager get chatParticipants =>
+      $$ChatParticipantsTableTableManager(_db, _db.chatParticipants);
 }
