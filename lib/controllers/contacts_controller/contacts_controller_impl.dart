@@ -23,15 +23,14 @@ class ContactsControllerImpl implements ContactsController {
   Future<Response> getAll(Request request) async {
     final int userId = request.context['userId']! as int;
 
-    final query = database.contacts.select()
-      ..where((tbl) => tbl.userId.equals(userId));
-
-    final List<Contact> contacts = await query.get();
+    final List<ContactContainer> containers = await database.getAllContacts(
+      userId: userId,
+    );
 
     final List<Map<String, dynamic>> response = [];
 
-    for (final Contact contact in contacts) {
-      response.add(contact.toResponse());
+    for (final container in containers) {
+      response.add(container.toJson());
     }
 
     return Response.ok(jsonEncode(response));
@@ -46,12 +45,12 @@ class ContactsControllerImpl implements ContactsController {
 
     final int userId = request.context['userId']! as int;
 
-    final Contact contact = await database.addContact(
+    final ContactContainer container = await database.addContact(
       userId: userId,
       contactUserId: contactUserId,
     );
 
-    return Response.ok(jsonEncode(contact.toResponse()));
+    return Response.ok(jsonEncode(container.toJson()));
   }
 
   @override
@@ -96,7 +95,7 @@ class ContactsControllerImpl implements ContactsController {
       if (user.id == userId) continue;
 
       response.add({
-        'userId': user.id,
+        'id': user.id,
         'username': user.name,
         'createdAt': user.createdAt.dateTime.toIso8601String(),
       });

@@ -1,9 +1,75 @@
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
+import 'package:chat_server/models/contacts.dart';
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
 /// Extension on the [Database] class to handle contacts-related operations.
 extension ContactsExtension on Database {
+  /// Retrieves a list of [ContactContainer] for the given user.
+  ///
+  /// This method performs a transaction to fetch the contacts associated with
+  /// the specified user ID. It first checks if the user exists, then retrieves
+  /// the contacts and the corresponding user details to construct the contact
+  /// containers.
+  ///
+  /// Parameters:
+  ///   [userId] The ID of the user whose contacts are to be retrieved.
+  ///
+  /// Returns:
+  ///   A Future that resolves to a list of [ContactContainer] instances.
+  ///
+  /// Throws:
+  ///   [ApiException.unauthorized] if the user with the specified ID cannot be found.
+  Future<List<ContactContainer>> getAllContacts({
+    required int userId,
+  }) {
+    return transaction<List<ContactContainer>>(() async {
+      final User? user = await getUserFromId(userId: userId);
+
+      if (user == null) {
+        throw const ApiException.unauthorized(
+          'Could not find user with such id',
+        );
+      }
+
+      final query = contacts.select()
+        ..where((tbl) => tbl.userId.equals(userId));
+
+      final List<Contact> userContacts = await query.get();
+
+      final List<int> contactIds =
+          userContacts.map((contact) => contact.contactUserId).toList();
+
+      if (contactIds.isEmpty) {
+        return [];
+      }
+
+      final usersQuery = users.select()
+        ..where((tbl) => tbl.id.isIn(contactIds));
+
+      final List<User> allUsers = await usersQuery.get();
+
+      final List<ContactContainer> containers = [];
+
+      for (final contact in userContacts) {
+        final String? name = allUsers
+            .firstWhereOrNull((user) => user.id == contact.contactUserId)
+            ?.name;
+
+        containers.add(
+          ContactContainer(
+            contact: contact,
+            name: name ?? '',
+          ),
+        );
+      }
+
+      return containers;
+    });
+  }
+
   /// Adds a contact for the user with the specified [userId] and [contactUserId].
   ///
   /// This method ensures that:
@@ -14,11 +80,11 @@ extension ContactsExtension on Database {
   /// Throws an [ApiException.badRequest] if any of these conditions are not met.
   ///
   /// Returns the newly added [Contact].
-  Future<Contact> addContact({
+  Future<ContactContainer> addContact({
     required int userId,
     required int contactUserId,
   }) {
-    return transaction<Contact>(() async {
+    return transaction<ContactContainer>(() async {
       if (userId == contactUserId) {
         const String errorMessage = 'You cannot add yourself in contacts';
         throw const ApiException.badRequest(errorMessage);
@@ -57,7 +123,12 @@ extension ContactsExtension on Database {
         throw const ApiException.badRequest(errorMessage);
       }
 
-      return contact;
+      final ContactContainer container = ContactContainer(
+        contact: contact,
+        name: target.name,
+      );
+
+      return container;
     });
   }
 

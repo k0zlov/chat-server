@@ -28,8 +28,8 @@ class Contacts extends Table {
   /// Adds a custom constraint to ensure a user cannot add themselves as a contact.
   @override
   List<String> get customConstraints => [
-    'CHECK (user_id <> contact_user_id)',
-  ];
+        'CHECK (user_id <> contact_user_id)',
+      ];
 }
 
 /// Extension on [Contact] to convert it to a JSON response format.
@@ -42,3 +42,34 @@ extension ContactToResponse on Contact {
     };
   }
 }
+
+/// A container for holding contact information along with a name.
+class ContactContainer {
+  /// Constructs an instance of [ContactContainer] with the given contact and name.
+  ///
+  /// Parameters:
+  ///   [contact] The [Contact] instance representing the contact details.
+  ///   [name] The name associated with the contact.
+  const ContactContainer({
+    required this.contact,
+    required this.name,
+  });
+
+  /// The [Contact] instance representing the contact details.
+  final Contact contact;
+
+  /// The name associated with the contact.
+  final String name;
+
+  /// Converts the [ContactContainer] instance to a JSON-compatible map.
+  ///
+  /// Returns:
+  ///   A map containing the serialized contact details and the name.
+  Map<String, dynamic> toJson() {
+    return {
+      ...contact.toResponse(),
+      'name': name,
+    };
+  }
+}
+
