@@ -1,4 +1,6 @@
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/chat_participants_extension.dart';
+import 'package:chat_server/database/extensions/messages_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat_participants.dart';
 import 'package:chat_server/models/chats.dart';
@@ -6,18 +8,6 @@ import 'package:drift/drift.dart';
 
 /// Extension for performing database operations related to Chats
 extension ChatsExtension on Database {
-  /// Retrieves chat participants for a given chat ID.
-  ///
-  /// Throws [ApiException] if there is an error fetching participants.
-  Future<List<ChatParticipant>> getChatParticipants({
-    required int chatId,
-  }) async {
-    final query = chatParticipants.select()
-      ..where((tbl) => tbl.chatId.equals(chatId));
-    final List<ChatParticipant> participants = await query.get();
-    return participants;
-  }
-
   /// Creates a new chat with the specified title, type, and description.
   ///
   /// Assigns the user as the owner of the chat.
@@ -58,7 +48,11 @@ extension ChatsExtension on Database {
         );
       }
 
-      return ChatContainer(chat: chat, participants: [participant]);
+      return ChatContainer(
+        chat: chat,
+        participants: [participant],
+        messages: [],
+      );
     });
   }
 
@@ -143,9 +137,14 @@ extension ChatsExtension on Database {
         chatId: chat.id,
       );
 
+      final List<Message> messages = await getAllMessages(
+        chatId: chat.id,
+      );
+
       final ChatContainer container = ChatContainer(
         chat: chat,
         participants: participants,
+        messages: messages,
       );
 
       return container;
@@ -175,6 +174,7 @@ extension ChatsExtension on Database {
           ChatContainer(
             chat: chat,
             participants: await getChatParticipants(chatId: chat.id),
+            messages: await getAllMessages(chatId: chat.id),
           ),
         );
       }
@@ -303,10 +303,23 @@ extension ChatsExtension on Database {
             .add(participant);
       }
 
+      final messagesQuery = messages.select()
+        ..where(
+          (tbl) => tbl.chatId.isIn(chatIds),
+        );
+
+      final List<Message> allMessages = await messagesQuery.get();
+
+      final Map<int, List<Message>> messagesByChatId = {};
+      for (final message in allMessages) {
+        messagesByChatId.putIfAbsent(message.chatId, () => []).add(message);
+      }
+
       final List<ChatContainer> response = userChats.map((chat) {
         return ChatContainer(
           chat: chat,
           participants: participantsByChatId[chat.id] ?? [],
+          messages: messagesByChatId[chat.id] ?? [],
         );
       }).toList();
 

@@ -7,6 +7,8 @@ import 'package:chat_server/controllers/chats_controller/chats_controller.dart';
 import 'package:chat_server/controllers/chats_controller/chats_controller_impl.dart';
 import 'package:chat_server/controllers/contacts_controller/contacts_controller.dart';
 import 'package:chat_server/controllers/contacts_controller/contacts_controller_impl.dart';
+import 'package:chat_server/controllers/messages_controller/messages_controller.dart';
+import 'package:chat_server/controllers/messages_controller/messages_controller_impl.dart';
 import 'package:chat_server/controllers/posts_controller/posts_controller.dart';
 import 'package:chat_server/controllers/posts_controller/posts_controller_impl.dart';
 import 'package:chat_server/database/database.dart';
@@ -16,6 +18,7 @@ import 'package:chat_server/middleware/headers_middleware.dart';
 import 'package:chat_server/routes/auth_route.dart';
 import 'package:chat_server/routes/chats_route.dart';
 import 'package:chat_server/routes/contacts_route.dart';
+import 'package:chat_server/routes/messages_route.dart';
 import 'package:chat_server/routes/posts_route.dart';
 import 'package:chat_server/routes/server_route.dart';
 import 'package:chat_server/server/server.dart';
@@ -41,8 +44,10 @@ part 'middleware.dart';
 
 part 'routes.dart';
 
+/// GetIt instance
 final GetIt getIt = GetIt.instance;
 
+/// Loading environment variables
 final DotEnv _env = DotEnv(includePlatformEnvironment: true)
   ..load(['../../.env']);
 
@@ -69,6 +74,7 @@ ChatServer _server() {
       getIt(instanceName: 'auth-route'),
       getIt(instanceName: 'contacts-route'),
       getIt(instanceName: 'chats-route'),
+      getIt(instanceName: 'messages-route'),
     ],
     middlewares: <Middleware>[
       getIt(instanceName: 'headers-middleware'),

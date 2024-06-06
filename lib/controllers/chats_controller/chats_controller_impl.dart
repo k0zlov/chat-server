@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:chat_server/controllers/chats_controller/chats_controller.dart';
-import 'package:chat_server/database/chats_extension.dart';
+import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chats.dart';

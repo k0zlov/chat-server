@@ -31,5 +31,12 @@ void _routes() {
         controller: getIt(),
         middlewares: [authMiddleware],
       ),
+    )
+    ..registerLazySingleton<ServerRoute>(
+      instanceName: 'messages-route',
+      () => MessagesRoute(
+        controller: getIt(),
+        middlewares: [authMiddleware],
+      ),
     );
 }

@@ -1,3 +1,4 @@
+import 'package:chat_server/database/database.dart';
 import 'package:chat_server/models/chats.dart';
 import 'package:chat_server/models/users.dart';
 import 'package:drift/drift.dart';
@@ -29,4 +30,13 @@ class ChatParticipants extends Table {
 
   @override
   Set<Column<Object>>? get primaryKey => {chatId, userId};
+}
+
+extension ChatParticipantsToResponse on ChatParticipant {
+  Map<String, dynamic> toResponse() {
+    return {
+      ...toJson(),
+      'joinedAt': joinedAt.dateTime.toIso8601String(),
+    };
+  }
 }

@@ -1,4 +1,6 @@
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/models/chat_participants.dart';
+import 'package:chat_server/models/messages.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 
@@ -27,14 +29,25 @@ class Chats extends Table {
   Set<Column<Object>>? get primaryKey => {id};
 }
 
+extension ChatToResponse on Chat {
+  Map<String, dynamic> toResponse() {
+    return {
+      ...toJson(),
+      'createdAt': createdAt.dateTime.toIso8601String(),
+    };
+  }
+}
+
 class ChatContainer {
   const ChatContainer({
     required this.chat,
     required this.participants,
+    required this.messages,
   });
 
   final Chat chat;
   final List<ChatParticipant> participants;
+  final List<Message> messages;
 
   @override
   String toString() {
@@ -42,19 +55,22 @@ class ChatContainer {
   }
 
   Map<String, dynamic> toJson() {
-    final List<Map<String, dynamic>> participantsJson = [];
+    final List<Map<String, dynamic>> participantsResponse = [];
 
     for (final participant in participants) {
-      participantsJson.add({
-        ...participant.toJson(),
-        'joinedAt': participant.joinedAt.dateTime.toIso8601String(),
-      });
+      participantsResponse.add(participant.toResponse());
+    }
+
+    final List<Map<String, dynamic>> messagesResponse = [];
+
+    for (final message in messages) {
+      messagesResponse.add(message.toResponse());
     }
 
     return {
-      ...chat.toJson(),
-      'createdAt': chat.createdAt.dateTime.toIso8601String(),
-      'participants': participantsJson,
+      ...chat.toResponse(),
+      'participants': participantsResponse,
+      'messages': messagesResponse,
     };
   }
 }

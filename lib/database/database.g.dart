@@ -1432,6 +1432,341 @@ class ChatParticipantsCompanion extends UpdateCompanion<ChatParticipant> {
   }
 }
 
+class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $MessagesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<int> id = GeneratedColumn<int>(
+      'id', aliasedName, false,
+      hasAutoIncrement: true,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('PRIMARY KEY AUTOINCREMENT'));
+  static const VerificationMeta _contentMeta =
+      const VerificationMeta('content');
+  @override
+  late final GeneratedColumn<String> content =
+      GeneratedColumn<String>('content', aliasedName, false,
+          additionalChecks: GeneratedColumn.checkTextLength(
+            minTextLength: 1,
+          ),
+          type: DriftSqlType.string,
+          requiredDuringInsert: true);
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES users (id) ON DELETE CASCADE'));
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<int> chatId = GeneratedColumn<int>(
+      'chat_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES chats (id) ON DELETE CASCADE'));
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<PgDateTime> updatedAt =
+      GeneratedColumn<PgDateTime>('updated_at', aliasedName, false,
+          type: PgTypes.timestampWithTimezone,
+          requiredDuringInsert: false,
+          defaultValue: const FunctionCallExpression('now', []));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<PgDateTime> createdAt =
+      GeneratedColumn<PgDateTime>('created_at', aliasedName, false,
+          type: PgTypes.timestampWithTimezone,
+          requiredDuringInsert: false,
+          defaultValue: const FunctionCallExpression('now', []));
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, content, userId, chatId, updatedAt, createdAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'messages';
+  @override
+  VerificationContext validateIntegrity(Insertable<Message> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    }
+    if (data.containsKey('content')) {
+      context.handle(_contentMeta,
+          content.isAcceptableOrUnknown(data['content']!, _contentMeta));
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    if (data.containsKey('chat_id')) {
+      context.handle(_chatIdMeta,
+          chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta));
+    } else if (isInserting) {
+      context.missing(_chatIdMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Message map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Message(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
+      content: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}user_id'])!,
+      chatId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chat_id'])!,
+      updatedAt: attachedDatabase.typeMapping.read(
+          PgTypes.timestampWithTimezone, data['${effectivePrefix}updated_at'])!,
+      createdAt: attachedDatabase.typeMapping.read(
+          PgTypes.timestampWithTimezone, data['${effectivePrefix}created_at'])!,
+    );
+  }
+
+  @override
+  $MessagesTable createAlias(String alias) {
+    return $MessagesTable(attachedDatabase, alias);
+  }
+}
+
+class Message extends DataClass implements Insertable<Message> {
+  final int id;
+  final String content;
+  final int userId;
+  final int chatId;
+  final PgDateTime updatedAt;
+  final PgDateTime createdAt;
+  const Message(
+      {required this.id,
+      required this.content,
+      required this.userId,
+      required this.chatId,
+      required this.updatedAt,
+      required this.createdAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<int>(id);
+    map['content'] = Variable<String>(content);
+    map['user_id'] = Variable<int>(userId);
+    map['chat_id'] = Variable<int>(chatId);
+    map['updated_at'] =
+        Variable<PgDateTime>(updatedAt, PgTypes.timestampWithTimezone);
+    map['created_at'] =
+        Variable<PgDateTime>(createdAt, PgTypes.timestampWithTimezone);
+    return map;
+  }
+
+  MessagesCompanion toCompanion(bool nullToAbsent) {
+    return MessagesCompanion(
+      id: Value(id),
+      content: Value(content),
+      userId: Value(userId),
+      chatId: Value(chatId),
+      updatedAt: Value(updatedAt),
+      createdAt: Value(createdAt),
+    );
+  }
+
+  factory Message.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Message(
+      id: serializer.fromJson<int>(json['id']),
+      content: serializer.fromJson<String>(json['content']),
+      userId: serializer.fromJson<int>(json['userId']),
+      chatId: serializer.fromJson<int>(json['chatId']),
+      updatedAt: serializer.fromJson<PgDateTime>(json['updatedAt']),
+      createdAt: serializer.fromJson<PgDateTime>(json['createdAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<int>(id),
+      'content': serializer.toJson<String>(content),
+      'userId': serializer.toJson<int>(userId),
+      'chatId': serializer.toJson<int>(chatId),
+      'updatedAt': serializer.toJson<PgDateTime>(updatedAt),
+      'createdAt': serializer.toJson<PgDateTime>(createdAt),
+    };
+  }
+
+  Message copyWith(
+          {int? id,
+          String? content,
+          int? userId,
+          int? chatId,
+          PgDateTime? updatedAt,
+          PgDateTime? createdAt}) =>
+      Message(
+        id: id ?? this.id,
+        content: content ?? this.content,
+        userId: userId ?? this.userId,
+        chatId: chatId ?? this.chatId,
+        updatedAt: updatedAt ?? this.updatedAt,
+        createdAt: createdAt ?? this.createdAt,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('Message(')
+          ..write('id: $id, ')
+          ..write('content: $content, ')
+          ..write('userId: $userId, ')
+          ..write('chatId: $chatId, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, content, userId, chatId, updatedAt, createdAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Message &&
+          other.id == this.id &&
+          other.content == this.content &&
+          other.userId == this.userId &&
+          other.chatId == this.chatId &&
+          other.updatedAt == this.updatedAt &&
+          other.createdAt == this.createdAt);
+}
+
+class MessagesCompanion extends UpdateCompanion<Message> {
+  final Value<int> id;
+  final Value<String> content;
+  final Value<int> userId;
+  final Value<int> chatId;
+  final Value<PgDateTime> updatedAt;
+  final Value<PgDateTime> createdAt;
+  const MessagesCompanion({
+    this.id = const Value.absent(),
+    this.content = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.chatId = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  });
+  MessagesCompanion.insert({
+    this.id = const Value.absent(),
+    required String content,
+    required int userId,
+    required int chatId,
+    this.updatedAt = const Value.absent(),
+    this.createdAt = const Value.absent(),
+  })  : content = Value(content),
+        userId = Value(userId),
+        chatId = Value(chatId);
+  static Insertable<Message> custom({
+    Expression<int>? id,
+    Expression<String>? content,
+    Expression<int>? userId,
+    Expression<int>? chatId,
+    Expression<PgDateTime>? updatedAt,
+    Expression<PgDateTime>? createdAt,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (content != null) 'content': content,
+      if (userId != null) 'user_id': userId,
+      if (chatId != null) 'chat_id': chatId,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (createdAt != null) 'created_at': createdAt,
+    });
+  }
+
+  MessagesCompanion copyWith(
+      {Value<int>? id,
+      Value<String>? content,
+      Value<int>? userId,
+      Value<int>? chatId,
+      Value<PgDateTime>? updatedAt,
+      Value<PgDateTime>? createdAt}) {
+    return MessagesCompanion(
+      id: id ?? this.id,
+      content: content ?? this.content,
+      userId: userId ?? this.userId,
+      chatId: chatId ?? this.chatId,
+      updatedAt: updatedAt ?? this.updatedAt,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<int>(id.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (chatId.present) {
+      map['chat_id'] = Variable<int>(chatId.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] =
+          Variable<PgDateTime>(updatedAt.value, PgTypes.timestampWithTimezone);
+    }
+    if (createdAt.present) {
+      map['created_at'] =
+          Variable<PgDateTime>(createdAt.value, PgTypes.timestampWithTimezone);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('MessagesCompanion(')
+          ..write('id: $id, ')
+          ..write('content: $content, ')
+          ..write('userId: $userId, ')
+          ..write('chatId: $chatId, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$Database extends GeneratedDatabase {
   _$Database(QueryExecutor e) : super(e);
   _$DatabaseManager get managers => _$DatabaseManager(this);
@@ -1441,12 +1776,13 @@ abstract class _$Database extends GeneratedDatabase {
   late final $ContactsTable contacts = $ContactsTable(this);
   late final $ChatParticipantsTable chatParticipants =
       $ChatParticipantsTable(this);
+  late final $MessagesTable messages = $MessagesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [posts, users, chats, contacts, chatParticipants];
+      [posts, users, chats, contacts, chatParticipants, messages];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
         [
@@ -1476,6 +1812,20 @@ abstract class _$Database extends GeneratedDatabase {
                 limitUpdateKind: UpdateKind.delete),
             result: [
               TableUpdate('chat_participants', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('users',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('messages', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('chats',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('messages', kind: UpdateKind.delete),
             ],
           ),
         ],
@@ -1760,6 +2110,19 @@ class $$UsersTableFilterComposer
                     $state.db.chatParticipants, joinBuilder, parentComposers)));
     return f(composer);
   }
+
+  ComposableFilter messageAuthors(
+      ComposableFilter Function($$MessagesTableFilterComposer f) f) {
+    final $$MessagesTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.messages,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder, parentComposers) =>
+            $$MessagesTableFilterComposer(ComposerState(
+                $state.db, $state.db.messages, joinBuilder, parentComposers)));
+    return f(composer);
+  }
 }
 
 class $$UsersTableOrderingComposer
@@ -1923,6 +2286,19 @@ class $$ChatsTableFilterComposer
             builder: (joinBuilder, parentComposers) =>
                 $$ChatParticipantsTableFilterComposer(ComposerState($state.db,
                     $state.db.chatParticipants, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter messageChats(
+      ComposableFilter Function($$MessagesTableFilterComposer f) f) {
+    final $$MessagesTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.messages,
+        getReferencedColumn: (t) => t.chatId,
+        builder: (joinBuilder, parentComposers) =>
+            $$MessagesTableFilterComposer(ComposerState(
+                $state.db, $state.db.messages, joinBuilder, parentComposers)));
     return f(composer);
   }
 }
@@ -2253,6 +2629,185 @@ class $$ChatParticipantsTableOrderingComposer
   }
 }
 
+typedef $$MessagesTableInsertCompanionBuilder = MessagesCompanion Function({
+  Value<int> id,
+  required String content,
+  required int userId,
+  required int chatId,
+  Value<PgDateTime> updatedAt,
+  Value<PgDateTime> createdAt,
+});
+typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
+  Value<int> id,
+  Value<String> content,
+  Value<int> userId,
+  Value<int> chatId,
+  Value<PgDateTime> updatedAt,
+  Value<PgDateTime> createdAt,
+});
+
+class $$MessagesTableTableManager extends RootTableManager<
+    _$Database,
+    $MessagesTable,
+    Message,
+    $$MessagesTableFilterComposer,
+    $$MessagesTableOrderingComposer,
+    $$MessagesTableProcessedTableManager,
+    $$MessagesTableInsertCompanionBuilder,
+    $$MessagesTableUpdateCompanionBuilder> {
+  $$MessagesTableTableManager(_$Database db, $MessagesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          filteringComposer:
+              $$MessagesTableFilterComposer(ComposerState(db, table)),
+          orderingComposer:
+              $$MessagesTableOrderingComposer(ComposerState(db, table)),
+          getChildManagerBuilder: (p) =>
+              $$MessagesTableProcessedTableManager(p),
+          getUpdateCompanionBuilder: ({
+            Value<int> id = const Value.absent(),
+            Value<String> content = const Value.absent(),
+            Value<int> userId = const Value.absent(),
+            Value<int> chatId = const Value.absent(),
+            Value<PgDateTime> updatedAt = const Value.absent(),
+            Value<PgDateTime> createdAt = const Value.absent(),
+          }) =>
+              MessagesCompanion(
+            id: id,
+            content: content,
+            userId: userId,
+            chatId: chatId,
+            updatedAt: updatedAt,
+            createdAt: createdAt,
+          ),
+          getInsertCompanionBuilder: ({
+            Value<int> id = const Value.absent(),
+            required String content,
+            required int userId,
+            required int chatId,
+            Value<PgDateTime> updatedAt = const Value.absent(),
+            Value<PgDateTime> createdAt = const Value.absent(),
+          }) =>
+              MessagesCompanion.insert(
+            id: id,
+            content: content,
+            userId: userId,
+            chatId: chatId,
+            updatedAt: updatedAt,
+            createdAt: createdAt,
+          ),
+        ));
+}
+
+class $$MessagesTableProcessedTableManager extends ProcessedTableManager<
+    _$Database,
+    $MessagesTable,
+    Message,
+    $$MessagesTableFilterComposer,
+    $$MessagesTableOrderingComposer,
+    $$MessagesTableProcessedTableManager,
+    $$MessagesTableInsertCompanionBuilder,
+    $$MessagesTableUpdateCompanionBuilder> {
+  $$MessagesTableProcessedTableManager(super.$state);
+}
+
+class $$MessagesTableFilterComposer
+    extends FilterComposer<_$Database, $MessagesTable> {
+  $$MessagesTableFilterComposer(super.$state);
+  ColumnFilters<int> get id => $state.composableBuilder(
+      column: $state.table.id,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get content => $state.composableBuilder(
+      column: $state.table.content,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<PgDateTime> get updatedAt => $state.composableBuilder(
+      column: $state.table.updatedAt,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<PgDateTime> get createdAt => $state.composableBuilder(
+      column: $state.table.createdAt,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$ChatsTableFilterComposer get chatId {
+    final $$ChatsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.chatId,
+        referencedTable: $state.db.chats,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$ChatsTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.chats, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
+class $$MessagesTableOrderingComposer
+    extends OrderingComposer<_$Database, $MessagesTable> {
+  $$MessagesTableOrderingComposer(super.$state);
+  ColumnOrderings<int> get id => $state.composableBuilder(
+      column: $state.table.id,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get content => $state.composableBuilder(
+      column: $state.table.content,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<PgDateTime> get updatedAt => $state.composableBuilder(
+      column: $state.table.updatedAt,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<PgDateTime> get createdAt => $state.composableBuilder(
+      column: $state.table.createdAt,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$ChatsTableOrderingComposer get chatId {
+    final $$ChatsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.chatId,
+        referencedTable: $state.db.chats,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$ChatsTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.chats, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
 class _$DatabaseManager {
   final _$Database _db;
   _$DatabaseManager(this._db);
@@ -2266,4 +2821,6 @@ class _$DatabaseManager {
       $$ContactsTableTableManager(_db, _db.contacts);
   $$ChatParticipantsTableTableManager get chatParticipants =>
       $$ChatParticipantsTableTableManager(_db, _db.chatParticipants);
+  $$MessagesTableTableManager get messages =>
+      $$MessagesTableTableManager(_db, _db.messages);
 }
