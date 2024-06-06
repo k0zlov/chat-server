@@ -100,7 +100,7 @@ Here is a brief overview of the main API endpoints. Detailed documentation can b
 
 ### Auth Controller
 
-- `GET /auth/user`: Retrieve authenticated user details.
+- `GET /auth`: Retrieve authenticated user details.
 - `POST /auth/register`: Register a new user.
 - `POST /auth/login`: Login a user.
 - `POST /auth/logout`: Logout the authenticated user.
@@ -109,9 +109,9 @@ Here is a brief overview of the main API endpoints. Detailed documentation can b
 ### Chats Controller
 
 - `GET /chats`: Retrieve all chats for the authenticated user.
-- `POST /chats`: Create a new chat.
-- `DELETE /chats`: Delete a chat.
-- `PUT /chats`: Update a chat.
+- `POST /chats/create`: Create a new chat.
+- `DELETE /chats/delete`: Delete a chat.
+- `PUT /chats/update`: Update a chat.
 - `POST /chats/join`: Join a chat.
 - `POST /chats/leave`: Leave a chat.
 - `GET /chats/search`: Search for chats by title.
@@ -119,18 +119,18 @@ Here is a brief overview of the main API endpoints. Detailed documentation can b
 ### Contacts Controller
 
 - `GET /contacts`: Retrieve all contacts for the authenticated user.
-- `POST /contacts`: Add a new contact.
-- `DELETE /contacts`: Remove a contact.
+- `POST /contacts/add`: Add a new contact.
+- `DELETE /contacts/remove`: Remove a contact.
 - `GET /contacts/search`: Search for users to add as contacts.
 
 ### Messages Controller
 
-- `POST /messages`: Send a message.
-- `DELETE /messages`: Delete a message.
-- `PUT /messages`: Update a message.
+- `POST /messages/send`: Send a message.
+- `DELETE /messages/delete`: Delete a message.
+- `PUT /messages/update`: Update a message.
 
 ### Posts Controller
 
 - `GET /posts`: Retrieve all posts.
-- `POST /posts`: Add a new post.
-- `DELETE /posts`: Remove an existing post.
+- `POST /posts/add`: Add a new post.
+- `DELETE /posts/remove`: Remove an existing post.
