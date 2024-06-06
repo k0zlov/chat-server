@@ -45,6 +45,7 @@ class JwtClient {
     return token;
   }
 
+  /// Returns userId from token or null if token is not valid
   int? getUserIdFromToken(String token) {
     final bool isValid = validateToken(token);
 

@@ -2,16 +2,21 @@ import 'dart:convert';
 
 import 'package:chat_server/controllers/contacts_controller/contacts_controller.dart';
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/contacts_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
+import 'package:chat_server/models/contacts.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
 import 'package:shelf/shelf.dart';
 
+/// Implementation of [ContactsController] for managing user contacts.
 class ContactsControllerImpl implements ContactsController {
+  /// Creates an instance of [ContactsControllerImpl] with the required [database].
   const ContactsControllerImpl({
     required this.database,
   });
 
+  /// The database instance used for querying and modifying contact data.
   final Database database;
 
   @override
@@ -26,10 +31,7 @@ class ContactsControllerImpl implements ContactsController {
     final List<Map<String, dynamic>> response = [];
 
     for (final Contact contact in contacts) {
-      response.add({
-        ...contact.toJson(),
-        'addedAt': contact.addedAt.dateTime.toIso8601String(),
-      });
+      response.add(contact.toResponse());
     }
 
     return Response.ok(jsonEncode(response));
@@ -44,50 +46,12 @@ class ContactsControllerImpl implements ContactsController {
 
     final int userId = request.context['userId']! as int;
 
-    if (userId == contactUserId) {
-      const String errorMessage = 'You cannot add yourself in contacts';
-      throw const ApiException.badRequest(errorMessage);
-    }
-
-    final User? target = await (database.users.select()
-          ..where((tbl) => tbl.id.equals(contactUserId)))
-        .getSingleOrNull();
-
-    if (target == null) {
-      const String errorMessage = 'There is no user with such id';
-      throw const ApiException.badRequest(errorMessage);
-    }
-
-    final query = database.contacts.count(
-      where: (tbl) =>
-          tbl.userId.equals(userId) & tbl.contactUserId.equals(contactUserId),
+    final Contact contact = await database.addContact(
+      userId: userId,
+      contactUserId: contactUserId,
     );
 
-    final int count = await query.getSingle();
-
-    if (count > 0) {
-      const String errorMessage = 'This user is already in your contacts';
-      throw const ApiException.badRequest(errorMessage);
-    }
-
-    final Contact? contact = await database.contacts.insertReturningOrNull(
-      ContactsCompanion.insert(
-        userId: userId,
-        contactUserId: contactUserId,
-      ),
-    );
-
-    if (contact == null) {
-      const String errorMessage = 'Could not add contact';
-      throw const ApiException.badRequest(errorMessage);
-    }
-
-    final Map<String, dynamic> response = {
-      ...contact.toJson(),
-      'addedAt': contact.addedAt.dateTime.toIso8601String(),
-    };
-
-    return Response.ok(jsonEncode(response));
+    return Response.ok(jsonEncode(contact.toResponse()));
   }
 
   @override
@@ -99,24 +63,17 @@ class ContactsControllerImpl implements ContactsController {
 
     final int userId = request.context['userId']! as int;
 
-    final query = database.contacts.select()
-      ..where(
-        (tbl) =>
-            tbl.userId.equals(userId) & tbl.contactUserId.equals(contactUserId),
+    try {
+      await database.removeContact(
+        userId: userId,
+        contactUserId: contactUserId,
       );
-
-    final Contact? contact = await query.getSingleOrNull();
-
-    if (contact == null) {
-      const String errorMessage = 'This user is not in your contacts';
-      throw const ApiException.badRequest(errorMessage);
-    }
-
-    final bool result = await database.contacts.deleteOne(contact);
-
-    if (!result) {
-      const String errorMessage = 'Could not remove user from contacts';
-      throw const ApiException.internalServerError(errorMessage);
+    } on ApiException {
+      rethrow;
+    } catch (e) {
+      throw const ApiException.internalServerError(
+        'There was an error while removing contact',
+      );
     }
 
     return Response.ok('Successfully removed user from contacts');

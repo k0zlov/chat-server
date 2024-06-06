@@ -6,12 +6,15 @@ import 'package:chat_server/utils/request_validator.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf_router/shelf_router.dart';
 
+/// A route handler for chat-related endpoints.
 class ChatsRoute extends ServerRoute {
+  /// Creates an instance of [ChatsRoute] with the necessary controller and middlewares.
   ChatsRoute({
     required this.controller,
     super.middlewares,
   });
 
+  /// The controller that handles chat logic.
   final ChatsController controller;
 
   @override
@@ -19,25 +22,27 @@ class ChatsRoute extends ServerRoute {
 
   @override
   Router configureRouter(Router router) {
-    /// Create
+    // Validator parameters for the create endpoint.
     const createParams = <ValidatorParameter<String>>[
       ValidatorParameter(name: 'title'),
       ValidatorParameter(name: 'description', nullable: true),
       ValidatorParameter(name: 'chatType', nullable: true),
     ];
 
+    // Middleware to validate create request body.
     final Middleware createValidator = validatorMiddleware(
       bodyParams: createParams,
     );
 
-    /// Delete
+    // Validator parameters for the delete endpoint.
     const deleteParams = <String>['chatId'];
 
+    // Middleware to validate delete request parameters.
     final Middleware deleteValidator = validatorMiddleware(
       requestParams: deleteParams,
     );
 
-    /// Update
+    // Validator parameters for the update endpoint.
     const updateParams = <ValidatorParameter<Object>>[
       ValidatorParameter<int>(name: 'chatId'),
       ValidatorParameter<String>(name: 'title', nullable: true),
@@ -45,33 +50,43 @@ class ChatsRoute extends ServerRoute {
       ValidatorParameter<String>(name: 'chatType', nullable: true),
     ];
 
+    // Middleware to validate update request body.
     final Middleware updateValidator = validatorMiddleware(
       bodyParams: updateParams,
     );
 
-    /// Search
+    // Validator parameters for the search endpoint.
     const searchParams = <String>['title'];
 
+    // Middleware to validate search request parameters.
     final Middleware searchValidator = validatorMiddleware(
       requestParams: searchParams,
     );
 
-    /// Join & Leave
+    // Validator parameters for join and leave endpoints.
     const params = <ValidatorParameter<int>>[
       ValidatorParameter(name: 'chatId'),
     ];
 
+    // Middleware to validate join and leave request body.
     final Middleware validator = validatorMiddleware(
       bodyParams: params,
     );
 
     return router
+    // Route to get all chats.
       ..get('/', controller.getAll)
+    // Route to create a chat, protected by create validation middleware.
       ..postMw('/create', controller.create, [createValidator])
+    // Route to delete a chat, protected by delete validation middleware.
       ..deleteMw('/delete', controller.delete, [deleteValidator])
+    // Route to update a chat, protected by update validation middleware.
       ..putMw('/update', controller.update, [updateValidator])
+    // Route to join a chat, protected by validation middleware.
       ..postMw('/join', controller.join, [validator])
+    // Route to leave a chat, protected by validation middleware.
       ..postMw('/leave', controller.leave, [validator])
+    // Route to search for chats, protected by search validation middleware.
       ..getMw('/search', controller.search, [searchValidator]);
   }
 }

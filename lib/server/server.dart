@@ -8,7 +8,9 @@ import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart';
 import 'package:shelf_router/shelf_router.dart';
 
+/// A class representing the chat server.
 class ChatServer {
+  /// Creates an instance of [ChatServer] with the specified configuration, middlewares, and routes.
   ChatServer({
     required this.config,
     this.middlewares = const <Middleware>[],
@@ -18,18 +20,24 @@ class ChatServer {
     _buildRoutes();
   }
 
+  /// The router instance used for defining routes.
   late final Router _router;
 
+  /// The configuration for the server.
   final ServerConfig config;
 
+  /// The list of routes to be added to the server.
   final List<ServerRoute> routes;
 
+  /// The list of middlewares to be applied to the server.
   final List<Middleware> middlewares;
 
+  /// Handler for requests that do not match any route.
   Response _notFoundHandler(Request request) {
     return const ApiException.notFound().toResponse();
   }
 
+  /// Builds the routes for the server.
   void _buildRoutes() {
     _router.get('/', (req) => Response.ok('Hello world!'));
 
@@ -38,6 +46,7 @@ class ChatServer {
     }
   }
 
+  /// Runs the server with the configured middlewares and routes.
   Future<void> run() async {
     Pipeline pipeline = const Pipeline();
 
