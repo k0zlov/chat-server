@@ -53,11 +53,11 @@ class MessagesRoute extends ServerRoute {
     );
 
     return router
-    // Route to send a message, protected by send validation middleware.
+      // Route to send a message, protected by send validation middleware.
       ..postMw('/send', controller.send, [sendValidator])
-    // Route to delete a message, protected by delete validation middleware.
+      // Route to delete a message, protected by delete validation middleware.
       ..deleteMw('/delete', controller.delete, [deleteValidator])
-    // Route to update a message, protected by update validation middleware.
+      // Route to update a message, protected by update validation middleware.
       ..putMw('/update', controller.update, [updateValidator]);
   }
 }

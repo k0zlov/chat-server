@@ -41,13 +41,13 @@ class ContactsRoute extends ServerRoute {
     );
 
     return router
-    // Route to get all contacts.
+      // Route to get all contacts.
       ..get('/', controller.getAll)
-    // Route to add a contact, protected by validation middleware.
+      // Route to add a contact, protected by validation middleware.
       ..postMw('/add', controller.add, [validator])
-    // Route to remove a contact, protected by validation middleware.
+      // Route to remove a contact, protected by validation middleware.
       ..deleteMw('/remove', controller.remove, [validator])
-    // Route to search for contacts, protected by search validation middleware.
+      // Route to search for contacts, protected by search validation middleware.
       ..getMw('/search', controller.search, [searchValidator]);
   }
 }

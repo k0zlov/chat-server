@@ -74,19 +74,19 @@ class ChatsRoute extends ServerRoute {
     );
 
     return router
-    // Route to get all chats.
+      // Route to get all chats.
       ..get('/', controller.getAll)
-    // Route to create a chat, protected by create validation middleware.
+      // Route to create a chat, protected by create validation middleware.
       ..postMw('/create', controller.create, [createValidator])
-    // Route to delete a chat, protected by delete validation middleware.
+      // Route to delete a chat, protected by delete validation middleware.
       ..deleteMw('/delete', controller.delete, [deleteValidator])
-    // Route to update a chat, protected by update validation middleware.
+      // Route to update a chat, protected by update validation middleware.
       ..putMw('/update', controller.update, [updateValidator])
-    // Route to join a chat, protected by validation middleware.
+      // Route to join a chat, protected by validation middleware.
       ..postMw('/join', controller.join, [validator])
-    // Route to leave a chat, protected by validation middleware.
+      // Route to leave a chat, protected by validation middleware.
       ..postMw('/leave', controller.leave, [validator])
-    // Route to search for chats, protected by search validation middleware.
+      // Route to search for chats, protected by search validation middleware.
       ..getMw('/search', controller.search, [searchValidator]);
   }
 }
