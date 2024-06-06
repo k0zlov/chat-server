@@ -76,7 +76,7 @@ class ContactsControllerImpl implements ContactsController {
       );
     }
 
-    return Response.ok('Successfully removed user from contacts');
+    return Response.ok(jsonEncode('Successfully removed user from contacts'));
   }
 
   @override

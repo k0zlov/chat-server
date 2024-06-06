@@ -60,7 +60,7 @@ class AuthControllerImpl implements AuthController {
       );
     }
 
-    return Response.ok('Successfully activated');
+    return Response.ok(jsonEncode('Successfully activated'));
   }
 
   @override
@@ -232,7 +232,7 @@ class AuthControllerImpl implements AuthController {
     }
 
     if (user.refreshToken.isEmpty) {
-      return Response.ok('User has already been logged out');
+      return Response.ok(jsonEncode('User has already been logged out'));
     }
 
     final User newUser = user.copyWith(refreshToken: '');
@@ -244,6 +244,6 @@ class AuthControllerImpl implements AuthController {
       throw const ApiException.internalServerError(errorMessage);
     }
 
-    return Response.ok('Successfully logged out');
+    return Response.ok(jsonEncode('Successfully logged out'));
   }
 }

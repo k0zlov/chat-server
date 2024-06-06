@@ -65,7 +65,7 @@ class MessagesControllerImpl implements MessagesController {
       userId: userId,
     );
 
-    return Response.ok('Successfully deleted message');
+    return Response.ok(jsonEncode('Successfully deleted message'));
   }
 
   @override

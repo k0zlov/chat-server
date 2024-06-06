@@ -82,7 +82,7 @@ class PostsControllerImpl implements PostsController {
       );
 
       if (result) {
-        return Response.ok('Successfully deleted post.');
+        return Response.ok(jsonEncode('Successfully deleted post.'));
       } else {
         throw Exception();
       }

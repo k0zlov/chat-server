@@ -95,7 +95,7 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.internalServerError(errorMessage);
     }
 
-    return Response.ok('Successfully deleted chat');
+    return Response.ok(jsonEncode('Successfully deleted chat'));
   }
 
   @override
@@ -180,7 +180,7 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.internalServerError(errorMessage);
     }
 
-    return Response.ok('Successfully joined chat');
+    return Response.ok(jsonEncode('Successfully joined chat'));
   }
 
   @override
@@ -205,7 +205,7 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.internalServerError(errorMessage);
     }
 
-    return Response.ok('Successfully left chat');
+    return Response.ok(jsonEncode('Successfully left chat'));
   }
 
   @override
