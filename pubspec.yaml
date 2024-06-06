@@ -1,7 +1,6 @@
 name: chat_server
-description: A server app using the shelf package and Docker.
+description: A server app using the shelf package.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
 
 environment:
   sdk: '>=3.4.0 <3.4.2'
