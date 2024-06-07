@@ -34,11 +34,16 @@ class AuthControllerImpl implements AuthController {
 
   @override
   Future<Response> getUser(Request request) async {
-    final int userId = request.context['userId']! as int;
+    final User? user;
 
-    final User? user = await database.getUserFromId(
-      userId: userId,
-    );
+    try {
+      final int userId = request.context['userId']! as int;
+      user = await database.getUserFromId(
+        userId: userId,
+      );
+    } catch (e) {
+      throw const ApiException.unauthorized();
+    }
 
     if (user == null) {
       const errorMessage = 'User with such id was not found';
