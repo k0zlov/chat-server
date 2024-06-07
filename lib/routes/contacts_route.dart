@@ -24,7 +24,7 @@ class ContactsRoute extends ServerRoute {
   Router configureRouter(Router router) {
     // Validator parameters for the add and remove endpoints.
     const params = <ValidatorParameter<int>>[
-      ValidatorParameter(name: 'contactUserId'),
+      ValidatorParameter(name: 'contactUserEmail'),
     ];
 
     // Middleware to validate add and remove request body.

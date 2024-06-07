@@ -70,7 +70,7 @@ extension ContactsExtension on Database {
     });
   }
 
-  /// Adds a contact for the user with the specified [userId] and [contactUserId].
+  /// Adds a contact for the user with the specified [userId] and [contactUserEmail].
   ///
   /// This method ensures that:
   /// - A user cannot add themselves as a contact.
@@ -82,26 +82,26 @@ extension ContactsExtension on Database {
   /// Returns the newly added [Contact].
   Future<ContactContainer> addContact({
     required int userId,
-    required int contactUserId,
+    required String contactUserEmail,
   }) {
     return transaction<ContactContainer>(() async {
-      if (userId == contactUserId) {
-        const String errorMessage = 'You cannot add yourself in contacts';
-        throw const ApiException.badRequest(errorMessage);
-      }
-
       final User? target = await (users.select()
-            ..where((tbl) => tbl.id.equals(contactUserId)))
+            ..where((tbl) => tbl.email.equals(contactUserEmail)))
           .getSingleOrNull();
 
       if (target == null) {
-        const String errorMessage = 'There is no user with such id';
+        const String errorMessage = 'There is no user with such email';
+        throw const ApiException.badRequest(errorMessage);
+      }
+
+      if (userId == target.id) {
+        const String errorMessage = 'You cannot add yourself in contacts';
         throw const ApiException.badRequest(errorMessage);
       }
 
       final query = contacts.count(
         where: (tbl) =>
-            tbl.userId.equals(userId) & tbl.contactUserId.equals(contactUserId),
+            tbl.userId.equals(userId) & tbl.contactUserId.equals(target.id),
       );
 
       final int count = await query.getSingle();
@@ -114,7 +114,7 @@ extension ContactsExtension on Database {
       final Contact? contact = await contacts.insertReturningOrNull(
         ContactsCompanion.insert(
           userId: userId,
-          contactUserId: contactUserId,
+          contactUserId: target.id,
         ),
       );
 

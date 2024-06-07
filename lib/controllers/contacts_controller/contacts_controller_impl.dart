@@ -41,13 +41,13 @@ class ContactsControllerImpl implements ContactsController {
     final Map<String, dynamic> body =
         RequestValidator.getBodyFromContext(request);
 
-    final int contactUserId = body['contactUserId'] as int;
+    final String contactUserEmail = body['contactUserEmail'] as String;
 
     final int userId = request.context['userId']! as int;
 
     final ContactContainer container = await database.addContact(
       userId: userId,
-      contactUserId: contactUserId,
+      contactUserEmail: contactUserEmail,
     );
 
     return Response.ok(jsonEncode(container.toJson()));
