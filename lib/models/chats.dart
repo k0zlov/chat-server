@@ -66,7 +66,7 @@ class ChatContainer {
   final Chat chat;
 
   /// List of participants in the chat.
-  final List<ChatParticipant> participants;
+  final List<ChatParticipantContainer> participants;
 
   /// List of messages in the chat.
   final List<Message> messages;
@@ -79,7 +79,7 @@ class ChatContainer {
   /// Converts the [ChatContainer] instance to a map for JSON response.
   Map<String, dynamic> toJson() {
     final List<Map<String, dynamic>> participantsResponse =
-        participants.map((participant) => participant.toResponse()).toList();
+        participants.map((container) => container.toJson()).toList();
 
     final List<Map<String, dynamic>> messagesResponse =
         messages.map((message) => message.toResponse()).toList();

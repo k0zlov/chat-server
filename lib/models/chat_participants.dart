@@ -56,3 +56,26 @@ extension ChatParticipantsToResponse on ChatParticipant {
     };
   }
 }
+
+/// Container class to hold chat participant information.
+class ChatParticipantContainer {
+  /// Basic constructor of [ChatParticipantContainer]
+  const ChatParticipantContainer({
+    required this.participant,
+    required this.name,
+  });
+
+  /// The chat participant information.
+  final ChatParticipant participant;
+
+  /// The name of chat participant
+  final String name;
+
+  /// Converts the [ChatParticipantContainer] instance to a map for JSON response.
+  Map<String, dynamic> toJson() {
+    return {
+      ...participant.toResponse(),
+      'name': name,
+    };
+  }
+}

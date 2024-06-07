@@ -1,6 +1,7 @@
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/messages_extension.dart';
+import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat_participants.dart';
 import 'package:chat_server/models/chats.dart';
@@ -20,6 +21,14 @@ extension ChatsExtension on Database {
     required String? description,
   }) async {
     return transaction<ChatContainer>(() async {
+      final User? user = await getUserFromId(userId: userId);
+
+      if (user == null) {
+        throw const ApiException.unauthorized(
+          'There is no such user',
+        );
+      }
+
       final ChatsCompanion chatsCompanion = ChatsCompanion.insert(
         title: title,
         description: Value(description),
@@ -48,9 +57,14 @@ extension ChatsExtension on Database {
         );
       }
 
+      final ChatParticipantContainer container = ChatParticipantContainer(
+        participant: participant,
+        name: user.name,
+      );
+
       return ChatContainer(
         chat: chat,
-        participants: [participant],
+        participants: [container],
         messages: [],
       );
     });
@@ -133,7 +147,8 @@ extension ChatsExtension on Database {
         throw const ApiException.internalServerError(errorMessage);
       }
 
-      final List<ChatParticipant> participants = await getChatParticipants(
+      final List<ChatParticipantContainer> participants =
+          await getChatParticipants(
         chatId: chat.id,
       );
 
@@ -277,11 +292,9 @@ extension ChatsExtension on Database {
     required int userId,
   }) async {
     return transaction<List<ChatContainer>>(() async {
-      final userParticipantsQuery = chatParticipants.select()
-        ..where((tbl) => tbl.userId.equals(userId));
-
-      final List<ChatParticipant> userParticipants =
-          await userParticipantsQuery.get();
+      final List<ChatParticipant> userParticipants = await getUserParticipants(
+        userId: userId,
+      );
 
       final List<int> chatIds = userParticipants.map((p) => p.chatId).toList();
 
@@ -290,17 +303,14 @@ extension ChatsExtension on Database {
       final chatsQuery = chats.select()..where((tbl) => tbl.id.isIn(chatIds));
       final List<Chat> userChats = await chatsQuery.get();
 
-      final participantsQuery = chatParticipants.select()
-        ..where((tbl) => tbl.chatId.isIn(chatIds));
+      final Map<int, List<ChatParticipantContainer>> containersByChatId = {};
 
-      final List<ChatParticipant> allParticipants =
-          await participantsQuery.get();
+      for (final chat in userChats) {
+        final containers = await getChatParticipants(
+          chatId: chat.id,
+        );
 
-      final Map<int, List<ChatParticipant>> participantsByChatId = {};
-      for (final participant in allParticipants) {
-        participantsByChatId
-            .putIfAbsent(participant.chatId, () => [])
-            .add(participant);
+        containersByChatId.addAll({chat.id: containers});
       }
 
       final messagesQuery = messages.select()
@@ -318,7 +328,7 @@ extension ChatsExtension on Database {
       final List<ChatContainer> response = userChats.map((chat) {
         return ChatContainer(
           chat: chat,
-          participants: participantsByChatId[chat.id] ?? [],
+          participants: containersByChatId[chat.id] ?? [],
           messages: messagesByChatId[chat.id] ?? [],
         );
       }).toList();
