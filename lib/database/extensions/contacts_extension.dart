@@ -54,14 +54,14 @@ extension ContactsExtension on Database {
       final List<ContactContainer> containers = [];
 
       for (final contact in userContacts) {
-        final String? name = allUsers
-            .firstWhereOrNull((user) => user.id == contact.contactUserId)
-            ?.name;
+        final User? user = allUsers
+            .firstWhereOrNull((user) => user.id == contact.contactUserId);
 
         containers.add(
           ContactContainer(
             contact: contact,
-            name: name ?? '',
+            name: user?.name ?? '',
+            email: user?.email ?? '',
           ),
         );
       }
@@ -126,6 +126,7 @@ extension ContactsExtension on Database {
       final ContactContainer container = ContactContainer(
         contact: contact,
         name: target.name,
+        email: target.email,
       );
 
       return container;

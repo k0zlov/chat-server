@@ -53,6 +53,7 @@ class ContactContainer {
   const ContactContainer({
     required this.contact,
     required this.name,
+    required this.email,
   });
 
   /// The [Contact] instance representing the contact details.
@@ -60,6 +61,9 @@ class ContactContainer {
 
   /// The name associated with the contact.
   final String name;
+
+  /// The email of the contact.
+  final String email;
 
   /// Converts the [ContactContainer] instance to a JSON-compatible map.
   ///
@@ -69,7 +73,7 @@ class ContactContainer {
     return {
       ...contact.toResponse(),
       'name': name,
+      'email': email,
     };
   }
 }
-
