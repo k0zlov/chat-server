@@ -96,7 +96,7 @@ class ContactsControllerImpl implements ContactsController {
 
       response.add({
         'id': user.id,
-        'username': user.name,
+        'name': user.name,
         'createdAt': user.createdAt.dateTime.toIso8601String(),
       });
     }
