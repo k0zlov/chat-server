@@ -14,7 +14,7 @@ abstract interface class ContactsController {
 
   /// Adds a new contact for the authenticated user.
   ///
-  /// Accepts a [Request] containing the contactUserId in the request body.
+  /// Accepts a [Request] containing the contactUserEmail in the request body.
   /// Returns a [Response] with the newly added contact in JSON format.
   /// Throws [ApiException] if the contact could not be added or if validation fails.
   Future<Response> add(Request request);
