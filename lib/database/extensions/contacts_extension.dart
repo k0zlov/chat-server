@@ -133,7 +133,7 @@ extension ContactsExtension on Database {
     });
   }
 
-  /// Removes a contact for the user with the specified [userId] and [contactUserId].
+  /// Removes a contact for the user with the specified [userId] and [contactUserEmail].
   ///
   /// This method ensures that:
   /// - The contact exists in the database.
@@ -142,14 +142,22 @@ extension ContactsExtension on Database {
   /// Throws an [ApiException.internalServerError] if the contact cannot be removed.
   Future<void> removeContact({
     required int userId,
-    required int contactUserId,
+    required String contactUserEmail,
   }) {
     return transaction<void>(() async {
+      final User? target = await (users.select()
+            ..where((tbl) => tbl.email.equals(contactUserEmail)))
+          .getSingleOrNull();
+
+      if (target == null) {
+        const String errorMessage = 'There is no user with such email';
+        throw const ApiException.badRequest(errorMessage);
+      }
+
       final query = contacts.select()
         ..where(
           (tbl) =>
-              tbl.userId.equals(userId) &
-              tbl.contactUserId.equals(contactUserId),
+              tbl.userId.equals(userId) & tbl.contactUserId.equals(target.id),
         );
 
       final Contact? contact = await query.getSingleOrNull();

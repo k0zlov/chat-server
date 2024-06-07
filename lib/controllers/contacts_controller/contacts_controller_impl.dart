@@ -58,14 +58,14 @@ class ContactsControllerImpl implements ContactsController {
     final Map<String, dynamic> body =
         RequestValidator.getBodyFromContext(request);
 
-    final int contactUserId = body['contactUserId'] as int;
+    final String contactUserEmail = body['contactUserEmail'] as String;
 
     final int userId = request.context['userId']! as int;
 
     try {
       await database.removeContact(
         userId: userId,
-        contactUserId: contactUserId,
+        contactUserEmail: contactUserEmail,
       );
     } on ApiException {
       rethrow;

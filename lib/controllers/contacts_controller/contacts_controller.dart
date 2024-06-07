@@ -21,7 +21,7 @@ abstract interface class ContactsController {
 
   /// Removes a contact for the authenticated user.
   ///
-  /// Accepts a [Request] containing the contactUserId in the request body.
+  /// Accepts a [Request] containing the contactUserEmail in the request body.
   /// Returns a [Response] indicating the result of the removal operation.
   /// Throws [ApiException] if the contact could not be removed or if validation fails.
   Future<Response> remove(Request request);
