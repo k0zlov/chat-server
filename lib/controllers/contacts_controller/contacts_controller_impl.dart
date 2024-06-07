@@ -84,8 +84,18 @@ class ContactsControllerImpl implements ContactsController {
 
     final int userId = request.context['userId']! as int;
 
+    final List<ContactContainer> userContacts = await database.getAllContacts(
+      userId: userId,
+    );
+
+    final List<int> contactIds = userContacts
+        .map((container) => container.contact.contactUserId)
+        .toList();
+
     final query = database.users.select()
-      ..where((tbl) => tbl.name.contains(username));
+      ..where(
+        (tbl) => tbl.name.contains(username) & tbl.id.isNotIn(contactIds),
+      );
 
     final List<User> users = await query.get();
 
