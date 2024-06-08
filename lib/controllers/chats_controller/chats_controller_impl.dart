@@ -168,19 +168,12 @@ class ChatsControllerImpl implements ChatsController {
 
     final int chatId = body['chatId'] as int;
 
-    try {
-      await database.joinChat(
-        chatId: chatId,
-        userId: userId,
-      );
-    } on ApiException {
-      rethrow;
-    } catch (e) {
-      const errorMessage = 'Could not get user into chat';
-      throw const ApiException.internalServerError(errorMessage);
-    }
+    final ChatContainer container = await database.joinChat(
+      chatId: chatId,
+      userId: userId,
+    );
 
-    return Response.ok(jsonEncode('Successfully joined chat'));
+    return Response.ok(jsonEncode(container.toJson()));
   }
 
   @override

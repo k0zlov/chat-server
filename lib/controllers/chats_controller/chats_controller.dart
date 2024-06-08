@@ -36,7 +36,7 @@ abstract interface class ChatsController {
   /// Adds the authenticated user to a chat.
   ///
   /// Accepts a [Request] containing the chat ID in the request body.
-  /// Returns a [Response] indicating the result of the join operation.
+  /// Returns a [Response] with chat model.
   /// Throws [ApiException] if the user could not join the chat or if validation fails.
   Future<Response> join(Request request);
 

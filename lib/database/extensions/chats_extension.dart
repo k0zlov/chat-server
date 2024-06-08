@@ -5,6 +5,7 @@ import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat_participants.dart';
 import 'package:chat_server/models/chats.dart';
+import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
 /// Extension for performing database operations related to Chats
@@ -221,31 +222,55 @@ extension ChatsExtension on Database {
   /// Adds a user to a chat.
   ///
   /// Throws [ApiException] if the chat does not exist or the user is already in the chat.
-  Future<void> joinChat({required int chatId, required int userId}) async {
-    return transaction<void>(() async {
-      await getChatOrThrow(chatId);
+  Future<ChatContainer> joinChat({
+    required int chatId,
+    required int userId,
+  }) async {
+    return transaction<ChatContainer>(() async {
+      final Chat chat = await getChatOrThrow(chatId);
 
-      final participantQuery = chatParticipants.select()
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.chatId.equals(chatId));
+      final User? user = await getUserFromId(userId: userId);
 
-      final ChatParticipant? participant =
-          await participantQuery.getSingleOrNull();
+      if (user == null) {
+        throw const ApiException.internalServerError(
+          'Could not find user with such id',
+        );
+      }
 
-      if (participant != null) {
+      final List<ChatParticipantContainer> participants =
+          await getChatParticipants(chatId: chatId);
+
+      final ChatParticipantContainer? userParticipant =
+          participants.singleWhereOrNull((p) => p.participant.userId == userId);
+
+      if (userParticipant != null) {
         throw const ApiException.badRequest('You are already in this chat');
       }
 
-      final ChatParticipant? result = await chatParticipants
+      final ChatParticipant? participant = await chatParticipants
           .insert()
           .insertReturningOrNull(
             ChatParticipantsCompanion.insert(chatId: chatId, userId: userId),
           );
 
-      if (result == null) {
+      if (participant == null) {
         throw const ApiException.internalServerError(
           'Could not create chat participant',
         );
       }
+
+      final List<Message> messages = await getAllMessages(chatId: chat.id);
+
+      final ChatContainer container = ChatContainer(
+        chat: chat,
+        participants: [
+          ...participants,
+          ChatParticipantContainer(participant: participant, name: user.name),
+        ],
+        messages: messages,
+      );
+
+      return container;
     });
   }
 
