@@ -14,9 +14,6 @@ enum ChatParticipantRole {
 
   /// Simple member
   member,
-
-  /// Can only read messages in chat
-  readonly,
 }
 
 /// Table schema for chat participants.
@@ -48,6 +45,12 @@ class ChatParticipants extends Table {
 
 /// Extension on [ChatParticipant] to convert it to a JSON response format.
 extension ChatParticipantDataExtension on ChatParticipant {
+  /// Chat Participants roles that can update chat
+  static List<ChatParticipantRole> canUpdateChatRoles = [
+    ChatParticipantRole.owner,
+    ChatParticipantRole.admin,
+  ];
+
   /// Converts the [ChatParticipant] instance to a map for JSON response.
   Map<String, dynamic> toResponse() {
     return {

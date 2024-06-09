@@ -2,6 +2,7 @@ import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat_participant.dart';
+import 'package:chat_server/tables/chat_participants.dart';
 import 'package:drift/drift.dart';
 
 /// Extension for performing database operations related to ChatParticipants
@@ -78,5 +79,57 @@ extension ChatParticipantsExtension on Database {
     }
 
     return participant;
+  }
+
+  Future<List<ChatParticipantModel>> updateChatParticipant({
+    required int chatId,
+    required int targetId,
+    required User requestUser,
+    required ChatParticipantRole newRole,
+  }) {
+    return transaction<List<ChatParticipantModel>>(() async {
+      if (requestUser.id == targetId) {
+        throw const ApiException.forbidden(
+          'You cannot change your role',
+        );
+      }
+
+      final requestParticipant = await getChatParticipantOrThrow(
+        userId: requestUser.id,
+        chatId: chatId,
+      );
+
+      if (requestParticipant.role != ChatParticipantRole.owner) {
+        throw const ApiException.forbidden(
+          "You don't have rights to change role of chat participants",
+        );
+      }
+
+      final targetParticipant = await getChatParticipantOrThrow(
+        userId: targetId,
+        chatId: chatId,
+      );
+
+      switch (newRole) {
+        case ChatParticipantRole.owner:
+          {
+            await chatParticipants.replaceOne(
+              requestParticipant.copyWith(role: ChatParticipantRole.admin),
+            );
+            await chatParticipants.replaceOne(
+              targetParticipant.copyWith(role: newRole),
+            );
+          }
+        case ChatParticipantRole.admin:
+        case ChatParticipantRole.member:
+          {
+            await chatParticipants.replaceOne(
+              targetParticipant.copyWith(role: newRole),
+            );
+          }
+      }
+
+      return getChatParticipants(chatId: chatId);
+    });
   }
 }

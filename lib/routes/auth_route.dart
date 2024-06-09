@@ -70,7 +70,7 @@ class AuthRoute extends ServerRoute {
       // Route to register, protected by registration validation middleware.
       ..postMw('/register', controller.register, [regValidator])
       // Route to update user details, protected by authentication middleware.
-      ..postMw(
+      ..putMw(
         '/user/update',
         controller.update,
         [authMiddleware, updateValidator],

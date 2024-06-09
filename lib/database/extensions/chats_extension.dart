@@ -120,18 +120,16 @@ extension ChatsExtension on Database {
           await authorQuery.getSingleOrNull();
 
       if (requestAuthor == null) {
-        throw const ApiException.badRequest(
+        throw const ApiException.forbidden(
           'You are not member of this chat',
         );
       }
 
-      final List<ChatParticipantRole> accessRoles = [
-        ChatParticipantRole.owner,
-        ChatParticipantRole.admin,
-      ];
+      final List<ChatParticipantRole> accessRoles =
+          ChatParticipantDataExtension.canUpdateChatRoles;
 
       if (!accessRoles.contains(requestAuthor.role)) {
-        throw const ApiException.badRequest(
+        throw const ApiException.forbidden(
           'You must be the admin or owner of the chat to update it',
         );
       }
@@ -276,7 +274,7 @@ extension ChatsExtension on Database {
       final ChatParticipant? participant = await query.getSingleOrNull();
 
       if (participant == null) {
-        throw const ApiException.badRequest('You are not in this chat');
+        throw const ApiException.forbidden('You are not in this chat');
       }
 
       final bool result = await chatParticipants.deleteOne(participant);

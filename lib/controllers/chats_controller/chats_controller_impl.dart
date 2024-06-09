@@ -2,9 +2,12 @@ import 'dart:convert';
 
 import 'package:chat_server/controllers/chats_controller/chats_controller.dart';
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat.dart';
+import 'package:chat_server/models/chat_participant.dart';
+import 'package:chat_server/tables/chat_participants.dart';
 import 'package:chat_server/tables/chats.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
@@ -24,8 +27,7 @@ class ChatsControllerImpl implements ChatsController {
   Future<Response> getAll(Request request) async {
     final User user = request.context['user']! as User;
 
-    final List<ChatModel> chats =
-        await database.getUserChats(userId: user.id);
+    final List<ChatModel> chats = await database.getUserChats(userId: user.id);
 
     final List<Map<String, dynamic>> response = [];
 
@@ -181,7 +183,6 @@ class ChatsControllerImpl implements ChatsController {
   Future<Response> leave(Request request) async {
     final User user = request.context['user']! as User;
 
-
     final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
       request,
     );
@@ -207,12 +208,54 @@ class ChatsControllerImpl implements ChatsController {
   Future<Response> search(Request request) async {
     final String title = request.url.queryParameters['title']!;
 
-    final List<ChatModel> models =
-        await database.searchChats(title: title);
+    final List<ChatModel> models = await database.searchChats(title: title);
 
     final List<Map<String, dynamic>> response = [];
 
     for (final model in models) {
+      response.add(model.toJson());
+    }
+
+    return Response.ok(jsonEncode(response));
+  }
+
+  @override
+  Future<Response> updateParticipant(Request request) async {
+    final User user = request.context['user']! as User;
+
+    final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
+      request,
+    );
+
+    final int chatId = body['chatId'] as int;
+    final int targetId = body['targetId'] as int;
+    final String rawRole = body['role'] as String;
+
+    ChatParticipantRole? newRole;
+
+    for (final role in ChatParticipantRole.values) {
+      if (role.name == rawRole) {
+        newRole = role;
+        break;
+      }
+    }
+
+    if (newRole == null) {
+      throw const ApiException.badRequest(
+        'There is no such chat participant role',
+      );
+    }
+
+    final models = await database.updateChatParticipant(
+      chatId: chatId,
+      targetId: targetId,
+      requestUser: user,
+      newRole: newRole,
+    );
+
+    final List<Map<String, dynamic>> response = [];
+
+    for (final ChatParticipantModel model in models) {
       response.add(model.toJson());
     }
 

@@ -53,4 +53,6 @@ abstract interface class ChatsController {
   /// Returns a [Response] with the search results in JSON format.
   /// Throws [ApiException] if an error occurs during the search.
   Future<Response> search(Request request);
+
+  Future<Response> updateParticipant(Request request);
 }

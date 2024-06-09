@@ -73,6 +73,16 @@ class ChatsRoute extends ServerRoute {
       bodyParams: params,
     );
 
+    const updateParticipantParams = <ValidatorParameter<Object>>[
+      ValidatorParameter<int>(name: 'chatId'),
+      ValidatorParameter<int>(name: 'targetId'),
+      ValidatorParameter<String>(name: 'role'),
+    ];
+
+    final Middleware updateParticipantValidator = validatorMiddleware(
+      bodyParams: updateParticipantParams,
+    );
+
     return router
       // Route to get all chats.
       ..get('/', controller.getAll)
@@ -87,6 +97,12 @@ class ChatsRoute extends ServerRoute {
       // Route to leave a chat, protected by validation middleware.
       ..postMw('/leave', controller.leave, [validator])
       // Route to search for chats, protected by search validation middleware.
-      ..getMw('/search', controller.search, [searchValidator]);
+      ..getMw('/search', controller.search, [searchValidator])
+      // Route to update a chat participant, protected by update validation middleware.
+      ..putMw(
+        '/update-participant',
+        controller.updateParticipant,
+        [updateParticipantValidator],
+      );
   }
 }
