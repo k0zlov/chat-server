@@ -208,6 +208,21 @@ extension ChatParticipantsExtension on Database {
           'Could not delete chat participant',
         );
       }
+
+      try {
+        final Future<void> unpinFuture = unpinChat(
+          chatId: chatId,
+          userId: userId,
+        );
+        final Future<void> unarchiveFuture = unarchiveChat(
+          chatId: chatId,
+          userId: userId,
+        );
+
+        await Future.wait([unarchiveFuture, unpinFuture]);
+      } catch (e) {
+        print(e);
+      }
     });
   }
 
