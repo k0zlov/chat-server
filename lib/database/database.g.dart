@@ -761,6 +761,14 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
   late final GeneratedColumn<String> description = GeneratedColumn<String>(
       'description', aliasedName, true,
       type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _lastActivityAtMeta =
+      const VerificationMeta('lastActivityAt');
+  @override
+  late final GeneratedColumn<PgDateTime> lastActivityAt =
+      GeneratedColumn<PgDateTime>('last_activity_at', aliasedName, false,
+          type: PgTypes.timestampWithTimezone,
+          requiredDuringInsert: false,
+          defaultValue: const FunctionCallExpression('now', []));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -771,7 +779,7 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
           defaultValue: const FunctionCallExpression('now', []));
   @override
   List<GeneratedColumn> get $columns =>
-      [id, type, title, description, createdAt];
+      [id, type, title, description, lastActivityAt, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -798,6 +806,12 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
           description.isAcceptableOrUnknown(
               data['description']!, _descriptionMeta));
     }
+    if (data.containsKey('last_activity_at')) {
+      context.handle(
+          _lastActivityAtMeta,
+          lastActivityAt.isAcceptableOrUnknown(
+              data['last_activity_at']!, _lastActivityAtMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -819,6 +833,9 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
           .read(DriftSqlType.string, data['${effectivePrefix}title'])!,
       description: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}description']),
+      lastActivityAt: attachedDatabase.typeMapping.read(
+          PgTypes.timestampWithTimezone,
+          data['${effectivePrefix}last_activity_at'])!,
       createdAt: attachedDatabase.typeMapping.read(
           PgTypes.timestampWithTimezone, data['${effectivePrefix}created_at'])!,
     );
@@ -846,6 +863,9 @@ class Chat extends DataClass implements Insertable<Chat> {
   /// Description of the chat, which can be nullable.
   final String? description;
 
+  /// Timestamp when there was activity in chat, with a default value of the current timestamp.
+  final PgDateTime lastActivityAt;
+
   /// Timestamp when the chat was created, with a default value of the current timestamp.
   final PgDateTime createdAt;
   const Chat(
@@ -853,6 +873,7 @@ class Chat extends DataClass implements Insertable<Chat> {
       required this.type,
       required this.title,
       this.description,
+      required this.lastActivityAt,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -865,6 +886,8 @@ class Chat extends DataClass implements Insertable<Chat> {
     if (!nullToAbsent || description != null) {
       map['description'] = Variable<String>(description);
     }
+    map['last_activity_at'] =
+        Variable<PgDateTime>(lastActivityAt, PgTypes.timestampWithTimezone);
     map['created_at'] =
         Variable<PgDateTime>(createdAt, PgTypes.timestampWithTimezone);
     return map;
@@ -878,6 +901,7 @@ class Chat extends DataClass implements Insertable<Chat> {
       description: description == null && nullToAbsent
           ? const Value.absent()
           : Value(description),
+      lastActivityAt: Value(lastActivityAt),
       createdAt: Value(createdAt),
     );
   }
@@ -891,6 +915,7 @@ class Chat extends DataClass implements Insertable<Chat> {
           .fromJson(serializer.fromJson<String>(json['type'])),
       title: serializer.fromJson<String>(json['title']),
       description: serializer.fromJson<String?>(json['description']),
+      lastActivityAt: serializer.fromJson<PgDateTime>(json['lastActivityAt']),
       createdAt: serializer.fromJson<PgDateTime>(json['createdAt']),
     );
   }
@@ -903,6 +928,7 @@ class Chat extends DataClass implements Insertable<Chat> {
           serializer.toJson<String>($ChatsTable.$convertertype.toJson(type)),
       'title': serializer.toJson<String>(title),
       'description': serializer.toJson<String?>(description),
+      'lastActivityAt': serializer.toJson<PgDateTime>(lastActivityAt),
       'createdAt': serializer.toJson<PgDateTime>(createdAt),
     };
   }
@@ -912,12 +938,14 @@ class Chat extends DataClass implements Insertable<Chat> {
           ChatType? type,
           String? title,
           Value<String?> description = const Value.absent(),
+          PgDateTime? lastActivityAt,
           PgDateTime? createdAt}) =>
       Chat(
         id: id ?? this.id,
         type: type ?? this.type,
         title: title ?? this.title,
         description: description.present ? description.value : this.description,
+        lastActivityAt: lastActivityAt ?? this.lastActivityAt,
         createdAt: createdAt ?? this.createdAt,
       );
   @override
@@ -927,13 +955,15 @@ class Chat extends DataClass implements Insertable<Chat> {
           ..write('type: $type, ')
           ..write('title: $title, ')
           ..write('description: $description, ')
+          ..write('lastActivityAt: $lastActivityAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
   }
 
   @override
-  int get hashCode => Object.hash(id, type, title, description, createdAt);
+  int get hashCode =>
+      Object.hash(id, type, title, description, lastActivityAt, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -942,6 +972,7 @@ class Chat extends DataClass implements Insertable<Chat> {
           other.type == this.type &&
           other.title == this.title &&
           other.description == this.description &&
+          other.lastActivityAt == this.lastActivityAt &&
           other.createdAt == this.createdAt);
 }
 
@@ -950,12 +981,14 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
   final Value<ChatType> type;
   final Value<String> title;
   final Value<String?> description;
+  final Value<PgDateTime> lastActivityAt;
   final Value<PgDateTime> createdAt;
   const ChatsCompanion({
     this.id = const Value.absent(),
     this.type = const Value.absent(),
     this.title = const Value.absent(),
     this.description = const Value.absent(),
+    this.lastActivityAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   ChatsCompanion.insert({
@@ -963,6 +996,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     this.type = const Value.absent(),
     required String title,
     this.description = const Value.absent(),
+    this.lastActivityAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   }) : title = Value(title);
   static Insertable<Chat> custom({
@@ -970,6 +1004,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     Expression<String>? type,
     Expression<String>? title,
     Expression<String>? description,
+    Expression<PgDateTime>? lastActivityAt,
     Expression<PgDateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -977,6 +1012,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
       if (type != null) 'type': type,
       if (title != null) 'title': title,
       if (description != null) 'description': description,
+      if (lastActivityAt != null) 'last_activity_at': lastActivityAt,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -986,12 +1022,14 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
       Value<ChatType>? type,
       Value<String>? title,
       Value<String?>? description,
+      Value<PgDateTime>? lastActivityAt,
       Value<PgDateTime>? createdAt}) {
     return ChatsCompanion(
       id: id ?? this.id,
       type: type ?? this.type,
       title: title ?? this.title,
       description: description ?? this.description,
+      lastActivityAt: lastActivityAt ?? this.lastActivityAt,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -1012,6 +1050,10 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
     if (description.present) {
       map['description'] = Variable<String>(description.value);
     }
+    if (lastActivityAt.present) {
+      map['last_activity_at'] = Variable<PgDateTime>(
+          lastActivityAt.value, PgTypes.timestampWithTimezone);
+    }
     if (createdAt.present) {
       map['created_at'] =
           Variable<PgDateTime>(createdAt.value, PgTypes.timestampWithTimezone);
@@ -1026,6 +1068,7 @@ class ChatsCompanion extends UpdateCompanion<Chat> {
           ..write('type: $type, ')
           ..write('title: $title, ')
           ..write('description: $description, ')
+          ..write('lastActivityAt: $lastActivityAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -2338,6 +2381,7 @@ typedef $$ChatsTableInsertCompanionBuilder = ChatsCompanion Function({
   Value<ChatType> type,
   required String title,
   Value<String?> description,
+  Value<PgDateTime> lastActivityAt,
   Value<PgDateTime> createdAt,
 });
 typedef $$ChatsTableUpdateCompanionBuilder = ChatsCompanion Function({
@@ -2345,6 +2389,7 @@ typedef $$ChatsTableUpdateCompanionBuilder = ChatsCompanion Function({
   Value<ChatType> type,
   Value<String> title,
   Value<String?> description,
+  Value<PgDateTime> lastActivityAt,
   Value<PgDateTime> createdAt,
 });
 
@@ -2371,6 +2416,7 @@ class $$ChatsTableTableManager extends RootTableManager<
             Value<ChatType> type = const Value.absent(),
             Value<String> title = const Value.absent(),
             Value<String?> description = const Value.absent(),
+            Value<PgDateTime> lastActivityAt = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
           }) =>
               ChatsCompanion(
@@ -2378,6 +2424,7 @@ class $$ChatsTableTableManager extends RootTableManager<
             type: type,
             title: title,
             description: description,
+            lastActivityAt: lastActivityAt,
             createdAt: createdAt,
           ),
           getInsertCompanionBuilder: ({
@@ -2385,6 +2432,7 @@ class $$ChatsTableTableManager extends RootTableManager<
             Value<ChatType> type = const Value.absent(),
             required String title,
             Value<String?> description = const Value.absent(),
+            Value<PgDateTime> lastActivityAt = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
           }) =>
               ChatsCompanion.insert(
@@ -2392,6 +2440,7 @@ class $$ChatsTableTableManager extends RootTableManager<
             type: type,
             title: title,
             description: description,
+            lastActivityAt: lastActivityAt,
             createdAt: createdAt,
           ),
         ));
@@ -2431,6 +2480,11 @@ class $$ChatsTableFilterComposer
 
   ColumnFilters<String> get description => $state.composableBuilder(
       column: $state.table.description,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<PgDateTime> get lastActivityAt => $state.composableBuilder(
+      column: $state.table.lastActivityAt,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -2487,6 +2541,11 @@ class $$ChatsTableOrderingComposer
 
   ColumnOrderings<String> get description => $state.composableBuilder(
       column: $state.table.description,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<PgDateTime> get lastActivityAt => $state.composableBuilder(
+      column: $state.table.lastActivityAt,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

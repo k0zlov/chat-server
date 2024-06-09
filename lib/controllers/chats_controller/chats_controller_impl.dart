@@ -64,6 +64,12 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.badRequest(errorMessage);
     }
 
+    if (chatType == ChatType.savedMessages) {
+      throw const ApiException.forbidden(
+        'You cannot create chat with that type',
+      );
+    }
+
     final ChatModel model = await database.createChat(
       user: user,
       title: title,
@@ -140,6 +146,12 @@ class ChatsControllerImpl implements ChatsController {
     if (chatTypeRaw != null && chatType == null) {
       const errorMessage = 'There is no such chat type';
       throw const ApiException.badRequest(errorMessage);
+    }
+
+    if (chatType == ChatType.savedMessages) {
+      throw const ApiException.forbidden(
+        'You cannot update chat with that type',
+      );
     }
 
     Chat modifiedChat = chatOrigin.copyWith(

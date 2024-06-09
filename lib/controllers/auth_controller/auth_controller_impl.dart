@@ -3,10 +3,12 @@ import 'dart:convert';
 
 import 'package:chat_server/controllers/auth_controller/auth_controller.dart';
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/services/mail_service.dart';
 import 'package:chat_server/services/token_service.dart';
+import 'package:chat_server/tables/chats.dart';
 import 'package:chat_server/tables/users.dart';
 import 'package:chat_server/utils/cookie.dart';
 import 'package:chat_server/utils/request_validator.dart';
@@ -192,6 +194,13 @@ class AuthControllerImpl implements AuthController {
         );
 
         await database.users.update().replace(newUser);
+
+        await database.createChat(
+          user: user,
+          title: 'Saved Messages',
+          chatType: ChatType.savedMessages,
+          description: 'This is your private chat for saving messages',
+        );
       });
     } catch (e) {
       throw const ApiException.internalServerError(

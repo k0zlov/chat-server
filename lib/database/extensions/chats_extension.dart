@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/messages_extension.dart';
@@ -10,6 +12,7 @@ import 'package:chat_server/tables/chats.dart';
 import 'package:chat_server/tables/users.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
+import 'package:drift_postgres/drift_postgres.dart';
 
 /// Extension for performing database operations related to Chats
 extension ChatsExtension on Database {
@@ -155,6 +158,8 @@ extension ChatsExtension on Database {
         messages: messages,
       );
 
+      unawaited(updateChatLastActivity(chatId: chat.id));
+
       return model;
     });
   }
@@ -166,11 +171,12 @@ extension ChatsExtension on Database {
   /// Throws [ApiException] if there is an error during the search.
   Future<List<ChatModel>> searchChats({required String title}) async {
     return transaction<List<ChatModel>>(() async {
+      final List<ChatType> hiddenTypes = ChatDataExtension.hiddenChatTypes;
+
       final chatsQuery = chats.select()
         ..where(
           (tbl) =>
-              tbl.title.contains(title) &
-              tbl.type.isNotInValues(<ChatType>[ChatType.private]),
+              tbl.title.contains(title) & tbl.type.isNotInValues(hiddenTypes),
         );
 
       final List<Chat> searchedChats = await chatsQuery.get();
@@ -211,79 +217,17 @@ extension ChatsExtension on Database {
     return chat;
   }
 
-  /// Adds a user to a chat.
-  ///
-  /// Throws [ApiException] if the chat does not exist or the user is already in the chat.
-  Future<ChatModel> joinChat({
-    required int chatId,
-    required User user,
-  }) async {
-    return transaction<ChatModel>(() async {
+  /// Updates chat last activity
+  Future<void> updateChatLastActivity({required int chatId}) async {
+    try {
       final Chat chat = await getChatOrThrow(chatId);
 
-      final List<ChatParticipantModel> participants =
-          await getChatParticipants(chatId: chatId);
-
-      final ChatParticipantModel? userParticipant = participants
-          .singleWhereOrNull((p) => p.participant.userId == user.id);
-
-      if (userParticipant != null) {
-        throw const ApiException.badRequest('You are already in this chat');
-      }
-
-      final ChatParticipant? participant = await chatParticipants
-          .insert()
-          .insertReturningOrNull(
-            ChatParticipantsCompanion.insert(chatId: chatId, userId: user.id),
-          );
-
-      if (participant == null) {
-        throw const ApiException.internalServerError(
-          'Could not create chat participant',
-        );
-      }
-
-      final List<MessageModel> messages = await getAllMessages(chatId: chat.id);
-
-      final ChatModel model = ChatModel(
-        chat: chat,
-        participants: [
-          ...participants,
-          ChatParticipantModel(participant: participant, user: user),
-        ],
-        messages: messages,
+      await chats.replaceOne(
+        chat.copyWith(lastActivityAt: PgDateTime(DateTime.now())),
       );
-
-      return model;
-    });
-  }
-
-  /// Removes a user from a chat.
-  ///
-  /// Throws [ApiException] if the chat does not exist or the user is not in the chat.
-  Future<void> leaveChat({
-    required int chatId,
-    required int userId,
-  }) async {
-    return transaction<void>(() async {
-      await getChatOrThrow(chatId);
-
-      final query = chatParticipants.select()
-        ..where((tbl) => tbl.userId.equals(userId) & tbl.chatId.equals(chatId));
-
-      final ChatParticipant? participant = await query.getSingleOrNull();
-
-      if (participant == null) {
-        throw const ApiException.forbidden('You are not in this chat');
-      }
-
-      final bool result = await chatParticipants.deleteOne(participant);
-      if (!result) {
-        throw const ApiException.internalServerError(
-          'Could not delete chat participant',
-        );
-      }
-    });
+    } catch (e) {
+      print(e);
+    }
   }
 
   /// Gets all chats for a specific user.

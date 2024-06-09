@@ -12,6 +12,9 @@ enum ChatType {
 
   /// Is open for all users, but read-only
   channel,
+
+  /// Special chat type for chat with saved messages of users
+  savedMessages,
 }
 
 /// Table schema for chats.
@@ -29,6 +32,12 @@ class Chats extends Table {
   /// Description of the chat, which can be nullable.
   TextColumn get description => text().nullable()();
 
+  /// Timestamp when there was activity in chat, with a default value of the current timestamp.
+  TimestampColumn get lastActivityAt =>
+      customType(PgTypes.timestampWithTimezone).withDefault(
+        const FunctionCallExpression('now', []),
+      )();
+
   /// Timestamp when the chat was created, with a default value of the current timestamp.
   TimestampColumn get createdAt =>
       customType(PgTypes.timestampWithTimezone).withDefault(
@@ -42,10 +51,17 @@ class Chats extends Table {
 
 /// Extension on [Chat] to convert it to a JSON response format.
 extension ChatDataExtension on Chat {
+  /// Hidden chat types from public access
+  static List<ChatType> hiddenChatTypes = [
+    ChatType.private,
+    ChatType.savedMessages,
+  ];
+
   /// Converts the [Chat] instance to a map for JSON response.
   Map<String, dynamic> toResponse() {
     return {
       ...toJson(),
+      'lastActivityAt': lastActivityAt.dateTime.toIso8601String(),
       'createdAt': createdAt.dateTime.toIso8601String(),
     };
   }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/chats_extension.dart';
@@ -64,10 +66,8 @@ extension MessagesExtension on Database {
           await getChatParticipantOrThrow(userId: user.id, chatId: chatId);
 
       if (chat.type == ChatType.channel) {
-        final List<ChatParticipantRole> accessRoles = [
-          ChatParticipantRole.owner,
-          ChatParticipantRole.admin,
-        ];
+        final List<ChatParticipantRole> accessRoles =
+            ChatParticipantDataExtension.canUpdateChatRoles;
 
         if (!accessRoles.contains(participant.role)) {
           throw const ApiException.badRequest(
@@ -100,6 +100,8 @@ extension MessagesExtension on Database {
         message: message,
         user: user,
       );
+
+      unawaited(updateChatLastActivity(chatId: chatId));
 
       return model;
     });
@@ -144,6 +146,8 @@ extension MessagesExtension on Database {
           'Could not delete message',
         );
       }
+
+      unawaited(updateChatLastActivity(chatId: chat.id));
     });
   }
 
