@@ -4,7 +4,8 @@ import 'package:chat_server/controllers/chats_controller/chats_controller.dart';
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
-import 'package:chat_server/models/chats.dart';
+import 'package:chat_server/models/chat.dart';
+import 'package:chat_server/tables/chats.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
 import 'package:shelf/shelf.dart';
@@ -23,13 +24,13 @@ class ChatsControllerImpl implements ChatsController {
   Future<Response> getAll(Request request) async {
     final User user = request.context['user']! as User;
 
-    final List<ChatContainer> chats =
+    final List<ChatModel> chats =
         await database.getUserChats(userId: user.id);
 
     final List<Map<String, dynamic>> response = [];
 
-    for (final ChatContainer container in chats) {
-      response.add(container.toJson());
+    for (final ChatModel model in chats) {
+      response.add(model.toJson());
     }
 
     return Response.ok(jsonEncode(response));
@@ -61,14 +62,14 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.badRequest(errorMessage);
     }
 
-    final ChatContainer container = await database.createChat(
+    final ChatModel model = await database.createChat(
       user: user,
       title: title,
       chatType: chatType,
       description: description,
     );
 
-    return Response.ok(jsonEncode(container.toJson()));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 
   @override
@@ -150,12 +151,12 @@ class ChatsControllerImpl implements ChatsController {
       );
     }
 
-    final ChatContainer container = await database.updateChat(
+    final ChatModel model = await database.updateChat(
       chat: modifiedChat,
       userId: user.id,
     );
 
-    return Response.ok(jsonEncode(container.toJson()));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 
   @override
@@ -168,12 +169,12 @@ class ChatsControllerImpl implements ChatsController {
 
     final int chatId = body['chatId'] as int;
 
-    final ChatContainer container = await database.joinChat(
+    final ChatModel model = await database.joinChat(
       chatId: chatId,
       user: user,
     );
 
-    return Response.ok(jsonEncode(container.toJson()));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 
   @override
@@ -206,13 +207,13 @@ class ChatsControllerImpl implements ChatsController {
   Future<Response> search(Request request) async {
     final String title = request.url.queryParameters['title']!;
 
-    final List<ChatContainer> containers =
+    final List<ChatModel> models =
         await database.searchChats(title: title);
 
     final List<Map<String, dynamic>> response = [];
 
-    for (final container in containers) {
-      response.add(container.toJson());
+    for (final model in models) {
+      response.add(model.toJson());
     }
 
     return Response.ok(jsonEncode(response));

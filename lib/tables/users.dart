@@ -10,6 +10,9 @@ class Users extends Table {
   /// Name of the user.
   TextColumn get name => text()();
 
+  /// Bio of the user.
+  TextColumn get bio => text().nullable()();
+
   /// Email of the user, must be unique.
   TextColumn get email => text().unique()();
 
@@ -43,7 +46,20 @@ class Users extends Table {
 }
 
 /// Extension on [User] to convert it to a JSON response format.
-extension UserToResponse on User {
+extension UserDataExtension on User {
+  /// Not found user when performing database operations and couldn't find user.
+  static User notFoundUser = User(
+    id: -1,
+    name: 'Not found',
+    email: 'Not found',
+    password: 'Not found',
+    refreshToken: 'Not found',
+    activation: 'Not found',
+    isActivated: false,
+    lastActivityAt: PgDateTime(DateTime.now()),
+    createdAt: PgDateTime(DateTime.now()),
+  );
+
   /// Converts the [User] instance to a map for JSON response.
   Map<String, dynamic> toResponse() {
     return {

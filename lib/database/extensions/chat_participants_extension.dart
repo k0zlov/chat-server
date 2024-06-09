@@ -1,7 +1,7 @@
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
-import 'package:chat_server/models/chat_participants.dart';
+import 'package:chat_server/models/chat_participant.dart';
 import 'package:drift/drift.dart';
 
 /// Extension for performing database operations related to ChatParticipants
@@ -9,27 +9,27 @@ extension ChatParticipantsExtension on Database {
   /// Retrieves chat participants for a given chat ID.
   ///
   /// Throws [ApiException] if there is an error fetching participants.
-  Future<List<ChatParticipantContainer>> getChatParticipants({
+  Future<List<ChatParticipantModel>> getChatParticipants({
     required int chatId,
   }) async {
     final query = chatParticipants.select()
       ..where((tbl) => tbl.chatId.equals(chatId));
     final List<ChatParticipant> participants = await query.get();
 
-    final List<ChatParticipantContainer> containers = [];
+    final List<ChatParticipantModel> models = [];
 
     for (final participant in participants) {
       final User? user = await getUserFromId(userId: participant.userId);
 
-      containers.add(
-        ChatParticipantContainer(
+      models.add(
+        ChatParticipantModel(
           participant: participant,
-          name: user?.name ?? '',
+          user: user!,
         ),
       );
     }
 
-    return containers;
+    return models;
   }
 
   /// Retrieves chat participants for a given user ID.

@@ -1,5 +1,5 @@
 import 'package:chat_server/database/database.dart';
-import 'package:chat_server/models/users.dart';
+import 'package:chat_server/tables/users.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 
@@ -33,52 +33,12 @@ class Contacts extends Table {
 }
 
 /// Extension on [Contact] to convert it to a JSON response format.
-extension ContactToResponse on Contact {
+extension ContactDataExtension on Contact {
   /// Converts the [Contact] instance to a map for JSON response.
   Map<String, dynamic> toResponse() {
     return {
       ...toJson(),
       'addedAt': addedAt.dateTime.toIso8601String(),
-    };
-  }
-}
-
-/// A container for holding contact information along with a name.
-class ContactContainer {
-  /// Constructs an instance of [ContactContainer] with the given contact and name.
-  ///
-  /// Parameters:
-  ///   [contact] The [Contact] instance representing the contact details.
-  ///   [name] The name associated with the contact.
-  const ContactContainer({
-    required this.contact,
-    required this.name,
-    required this.email,
-    required this.lastActivity,
-  });
-
-  /// The [Contact] instance representing the contact details.
-  final Contact contact;
-
-  /// The name associated with the contact.
-  final String name;
-
-  /// The email of the contact.
-  final String email;
-
-  /// Timestamp when the contact had last activity,
-  final DateTime lastActivity;
-
-  /// Converts the [ContactContainer] instance to a JSON-compatible map.
-  ///
-  /// Returns:
-  ///   A map containing the serialized contact details and the name.
-  Map<String, dynamic> toJson() {
-    return {
-      ...contact.toResponse(),
-      'name': name,
-      'email': email,
-      'lastActivityAt': lastActivity.toIso8601String(),
     };
   }
 }

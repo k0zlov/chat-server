@@ -5,9 +5,9 @@ import 'package:chat_server/controllers/auth_controller/auth_controller.dart';
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
-import 'package:chat_server/models/users.dart';
 import 'package:chat_server/services/mail_service.dart';
 import 'package:chat_server/services/token_service.dart';
+import 'package:chat_server/tables/users.dart';
 import 'package:chat_server/utils/cookie.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
@@ -222,12 +222,7 @@ class AuthControllerImpl implements AuthController {
 
   @override
   Future<Response> logout(Request request) async {
-    final User? user = request.context['user']! as User?;
-
-    if (user == null) {
-      const errorMessage = 'Could not find user with such id';
-      throw const ApiException.unauthorized(errorMessage);
-    }
+    final User user = request.context['user']! as User;
 
     if (user.refreshToken.isEmpty) {
       return Response.ok(jsonEncode('User has already been logged out'));
@@ -243,5 +238,32 @@ class AuthControllerImpl implements AuthController {
     }
 
     return Response.ok(jsonEncode('Successfully logged out'));
+  }
+
+  @override
+  Future<Response> update(Request request) async {
+    final User user = request.context['user']! as User;
+
+    final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
+      request,
+    );
+
+    final String? name = body['name'] as String?;
+    final String? bio = body['bio'] as String?;
+
+    final User updatedUser;
+    try {
+      updatedUser = await database.updateUser(
+        user: user,
+        bio: bio ?? user.bio,
+        name: name ?? user.name,
+      );
+    } catch (e) {
+      throw const ApiException.internalServerError(
+        'Could not update user data',
+      );
+    }
+
+    return Response.ok(jsonEncode(updatedUser.toResponse()));
   }
 }

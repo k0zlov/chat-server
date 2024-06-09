@@ -1,27 +1,27 @@
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
-import 'package:chat_server/models/contacts.dart';
+import 'package:chat_server/models/contact.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
 /// Extension on the [Database] class to handle contacts-related operations.
 extension ContactsExtension on Database {
-  /// Retrieves a list of [ContactContainer] for the given user.
+  /// Retrieves a list of [ContactModel] for the given user.
   ///
   /// This method performs a transaction to fetch the contacts associated with
   /// the specified user ID. It first checks if the user exists, then retrieves
   /// the contacts and the corresponding user details to construct the contact
-  /// containers.
+  /// models.
   ///
   /// Parameters:
   ///   [userId] The ID of the user whose contacts are to be retrieved.
   ///
   /// Returns:
-  ///   A Future that resolves to a list of [ContactContainer] instances.
-  Future<List<ContactContainer>> getAllContacts({
+  ///   A Future that resolves to a list of [ContactModel] instances.
+  Future<List<ContactModel>> getAllContacts({
     required int userId,
   }) {
-    return transaction<List<ContactContainer>>(() async {
+    return transaction<List<ContactModel>>(() async {
       final query = contacts.select()
         ..where((tbl) => tbl.userId.equals(userId));
 
@@ -39,23 +39,21 @@ extension ContactsExtension on Database {
 
       final List<User> allUsers = await usersQuery.get();
 
-      final List<ContactContainer> containers = [];
+      final List<ContactModel> models = [];
 
       for (final contact in userContacts) {
         final User? user = allUsers
             .firstWhereOrNull((user) => user.id == contact.contactUserId);
 
-        containers.add(
-          ContactContainer(
+        models.add(
+          ContactModel(
             contact: contact,
-            name: user?.name ?? '',
-            email: user?.email ?? '',
-            lastActivity: user?.lastActivityAt.dateTime ?? DateTime.now(),
+            user: user!,
           ),
         );
       }
 
-      return containers;
+      return models;
     });
   }
 
@@ -69,11 +67,11 @@ extension ContactsExtension on Database {
   /// Throws an [ApiException.badRequest] if any of these conditions are not met.
   ///
   /// Returns the newly added [Contact].
-  Future<ContactContainer> addContact({
+  Future<ContactModel> addContact({
     required int userId,
     required String contactUserEmail,
   }) {
-    return transaction<ContactContainer>(() async {
+    return transaction<ContactModel>(() async {
       final User? target = await (users.select()
             ..where((tbl) => tbl.email.equals(contactUserEmail)))
           .getSingleOrNull();
@@ -112,14 +110,12 @@ extension ContactsExtension on Database {
         throw const ApiException.badRequest(errorMessage);
       }
 
-      final ContactContainer container = ContactContainer(
+      final ContactModel model = ContactModel(
         contact: contact,
-        name: target.name,
-        email: target.email,
-        lastActivity: target.lastActivityAt.dateTime,
+        user: target,
       );
 
-      return container;
+      return model;
     });
   }
 

@@ -233,6 +233,11 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   late final GeneratedColumn<String> name = GeneratedColumn<String>(
       'name', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _bioMeta = const VerificationMeta('bio');
+  @override
+  late final GeneratedColumn<String> bio = GeneratedColumn<String>(
+      'bio', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
   static const VerificationMeta _emailMeta = const VerificationMeta('email');
   @override
   late final GeneratedColumn<String> email = GeneratedColumn<String>(
@@ -294,6 +299,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
   List<GeneratedColumn> get $columns => [
         id,
         name,
+        bio,
         email,
         password,
         refreshToken,
@@ -320,6 +326,10 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('bio')) {
+      context.handle(
+          _bioMeta, bio.isAcceptableOrUnknown(data['bio']!, _bioMeta));
     }
     if (data.containsKey('email')) {
       context.handle(
@@ -378,6 +388,8 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       name: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      bio: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}bio']),
       email: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}email'])!,
       password: attachedDatabase.typeMapping
@@ -409,6 +421,9 @@ class User extends DataClass implements Insertable<User> {
   /// Name of the user.
   final String name;
 
+  /// Bio of the user.
+  final String? bio;
+
   /// Email of the user, must be unique.
   final String email;
 
@@ -432,6 +447,7 @@ class User extends DataClass implements Insertable<User> {
   const User(
       {required this.id,
       required this.name,
+      this.bio,
       required this.email,
       required this.password,
       required this.refreshToken,
@@ -444,6 +460,9 @@ class User extends DataClass implements Insertable<User> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || bio != null) {
+      map['bio'] = Variable<String>(bio);
+    }
     map['email'] = Variable<String>(email);
     map['password'] = Variable<String>(password);
     map['refresh_token'] = Variable<String>(refreshToken);
@@ -460,6 +479,7 @@ class User extends DataClass implements Insertable<User> {
     return UsersCompanion(
       id: Value(id),
       name: Value(name),
+      bio: bio == null && nullToAbsent ? const Value.absent() : Value(bio),
       email: Value(email),
       password: Value(password),
       refreshToken: Value(refreshToken),
@@ -476,6 +496,7 @@ class User extends DataClass implements Insertable<User> {
     return User(
       id: serializer.fromJson<int>(json['id']),
       name: serializer.fromJson<String>(json['name']),
+      bio: serializer.fromJson<String?>(json['bio']),
       email: serializer.fromJson<String>(json['email']),
       password: serializer.fromJson<String>(json['password']),
       refreshToken: serializer.fromJson<String>(json['refreshToken']),
@@ -491,6 +512,7 @@ class User extends DataClass implements Insertable<User> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'name': serializer.toJson<String>(name),
+      'bio': serializer.toJson<String?>(bio),
       'email': serializer.toJson<String>(email),
       'password': serializer.toJson<String>(password),
       'refreshToken': serializer.toJson<String>(refreshToken),
@@ -504,6 +526,7 @@ class User extends DataClass implements Insertable<User> {
   User copyWith(
           {int? id,
           String? name,
+          Value<String?> bio = const Value.absent(),
           String? email,
           String? password,
           String? refreshToken,
@@ -514,6 +537,7 @@ class User extends DataClass implements Insertable<User> {
       User(
         id: id ?? this.id,
         name: name ?? this.name,
+        bio: bio.present ? bio.value : this.bio,
         email: email ?? this.email,
         password: password ?? this.password,
         refreshToken: refreshToken ?? this.refreshToken,
@@ -527,6 +551,7 @@ class User extends DataClass implements Insertable<User> {
     return (StringBuffer('User(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('bio: $bio, ')
           ..write('email: $email, ')
           ..write('password: $password, ')
           ..write('refreshToken: $refreshToken, ')
@@ -539,7 +564,7 @@ class User extends DataClass implements Insertable<User> {
   }
 
   @override
-  int get hashCode => Object.hash(id, name, email, password, refreshToken,
+  int get hashCode => Object.hash(id, name, bio, email, password, refreshToken,
       activation, isActivated, lastActivityAt, createdAt);
   @override
   bool operator ==(Object other) =>
@@ -547,6 +572,7 @@ class User extends DataClass implements Insertable<User> {
       (other is User &&
           other.id == this.id &&
           other.name == this.name &&
+          other.bio == this.bio &&
           other.email == this.email &&
           other.password == this.password &&
           other.refreshToken == this.refreshToken &&
@@ -559,6 +585,7 @@ class User extends DataClass implements Insertable<User> {
 class UsersCompanion extends UpdateCompanion<User> {
   final Value<int> id;
   final Value<String> name;
+  final Value<String?> bio;
   final Value<String> email;
   final Value<String> password;
   final Value<String> refreshToken;
@@ -569,6 +596,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   const UsersCompanion({
     this.id = const Value.absent(),
     this.name = const Value.absent(),
+    this.bio = const Value.absent(),
     this.email = const Value.absent(),
     this.password = const Value.absent(),
     this.refreshToken = const Value.absent(),
@@ -580,6 +608,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   UsersCompanion.insert({
     this.id = const Value.absent(),
     required String name,
+    this.bio = const Value.absent(),
     required String email,
     required String password,
     required String refreshToken,
@@ -595,6 +624,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   static Insertable<User> custom({
     Expression<int>? id,
     Expression<String>? name,
+    Expression<String>? bio,
     Expression<String>? email,
     Expression<String>? password,
     Expression<String>? refreshToken,
@@ -606,6 +636,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (name != null) 'name': name,
+      if (bio != null) 'bio': bio,
       if (email != null) 'email': email,
       if (password != null) 'password': password,
       if (refreshToken != null) 'refresh_token': refreshToken,
@@ -619,6 +650,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   UsersCompanion copyWith(
       {Value<int>? id,
       Value<String>? name,
+      Value<String?>? bio,
       Value<String>? email,
       Value<String>? password,
       Value<String>? refreshToken,
@@ -629,6 +661,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     return UsersCompanion(
       id: id ?? this.id,
       name: name ?? this.name,
+      bio: bio ?? this.bio,
       email: email ?? this.email,
       password: password ?? this.password,
       refreshToken: refreshToken ?? this.refreshToken,
@@ -647,6 +680,9 @@ class UsersCompanion extends UpdateCompanion<User> {
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
+    }
+    if (bio.present) {
+      map['bio'] = Variable<String>(bio.value);
     }
     if (email.present) {
       map['email'] = Variable<String>(email.value);
@@ -679,6 +715,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     return (StringBuffer('UsersCompanion(')
           ..write('id: $id, ')
           ..write('name: $name, ')
+          ..write('bio: $bio, ')
           ..write('email: $email, ')
           ..write('password: $password, ')
           ..write('refreshToken: $refreshToken, ')
@@ -2032,6 +2069,7 @@ class $$PostsTableOrderingComposer
 typedef $$UsersTableInsertCompanionBuilder = UsersCompanion Function({
   Value<int> id,
   required String name,
+  Value<String?> bio,
   required String email,
   required String password,
   required String refreshToken,
@@ -2043,6 +2081,7 @@ typedef $$UsersTableInsertCompanionBuilder = UsersCompanion Function({
 typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<int> id,
   Value<String> name,
+  Value<String?> bio,
   Value<String> email,
   Value<String> password,
   Value<String> refreshToken,
@@ -2073,6 +2112,7 @@ class $$UsersTableTableManager extends RootTableManager<
           getUpdateCompanionBuilder: ({
             Value<int> id = const Value.absent(),
             Value<String> name = const Value.absent(),
+            Value<String?> bio = const Value.absent(),
             Value<String> email = const Value.absent(),
             Value<String> password = const Value.absent(),
             Value<String> refreshToken = const Value.absent(),
@@ -2084,6 +2124,7 @@ class $$UsersTableTableManager extends RootTableManager<
               UsersCompanion(
             id: id,
             name: name,
+            bio: bio,
             email: email,
             password: password,
             refreshToken: refreshToken,
@@ -2095,6 +2136,7 @@ class $$UsersTableTableManager extends RootTableManager<
           getInsertCompanionBuilder: ({
             Value<int> id = const Value.absent(),
             required String name,
+            Value<String?> bio = const Value.absent(),
             required String email,
             required String password,
             required String refreshToken,
@@ -2106,6 +2148,7 @@ class $$UsersTableTableManager extends RootTableManager<
               UsersCompanion.insert(
             id: id,
             name: name,
+            bio: bio,
             email: email,
             password: password,
             refreshToken: refreshToken,
@@ -2139,6 +2182,11 @@ class $$UsersTableFilterComposer
 
   ColumnFilters<String> get name => $state.composableBuilder(
       column: $state.table.name,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<String> get bio => $state.composableBuilder(
+      column: $state.table.bio,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -2241,6 +2289,11 @@ class $$UsersTableOrderingComposer
 
   ColumnOrderings<String> get name => $state.composableBuilder(
       column: $state.table.name,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<String> get bio => $state.composableBuilder(
+      column: $state.table.bio,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

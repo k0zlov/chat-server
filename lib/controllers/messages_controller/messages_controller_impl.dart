@@ -4,7 +4,7 @@ import 'package:chat_server/controllers/messages_controller/messages_controller.
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/messages_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
-import 'package:chat_server/models/messages.dart';
+import 'package:chat_server/models/message.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:shelf/shelf.dart';
 
@@ -35,13 +35,13 @@ class MessagesControllerImpl implements MessagesController {
     final int chatId = body['chatId'] as int;
     final String content = body['content'] as String;
 
-    final Message message = await database.sendMessage(
-      userId: user.id,
+    final MessageModel model = await database.sendMessage(
+      user: user,
       chatId: chatId,
       content: content,
     );
 
-    return Response.ok(jsonEncode(message.toResponse()));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 
   @override
@@ -79,12 +79,12 @@ class MessagesControllerImpl implements MessagesController {
     final int messageId = body['messageId'] as int;
     final String content = body['content'] as String;
 
-    final Message message = await database.updateMessage(
+    final MessageModel model = await database.updateMessage(
       messageId: messageId,
-      userId: user.id,
+      user: user,
       content: content,
     );
 
-    return Response.ok(jsonEncode(message.toResponse()));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 }

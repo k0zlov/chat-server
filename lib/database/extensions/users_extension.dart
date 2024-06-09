@@ -42,7 +42,7 @@ extension UsersExtension on Database {
     });
   }
 
-  /// Updates user`s last activity timestamp
+  /// Updates user`s last activity timestamp.
   Future<void> updateLastActivity({
     required User user,
   }) async {
@@ -51,5 +51,20 @@ extension UsersExtension on Database {
     );
 
     await users.update().replace(updatedUser);
+  }
+
+  /// Updates user details.
+  Future<User> updateUser({
+    required User user,
+    String? name,
+    String? bio,
+  }) {
+    return transaction<User>(() async {
+      final User updatedUser = user.copyWith(name: name, bio: Value(bio));
+
+      final query = users.update()..whereSamePrimaryKey(updatedUser);
+
+      return (await query.writeReturning(updatedUser))[0];
+    });
   }
 }

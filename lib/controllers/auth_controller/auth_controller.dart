@@ -30,7 +30,7 @@ abstract interface class AuthController {
   /// Logs out the authenticated user.
   ///
   /// Returns a [Response] indicating the result of the logout operation.
-  /// Throws [ApiException] if the logout fails or if the user is not authenticated.
+  /// Throws [ApiException] if the logout fails.
   Future<Response> logout(Request request);
 
   /// Activates a user's account using an activation link.
@@ -45,4 +45,10 @@ abstract interface class AuthController {
   /// Returns a [Response] with the new access token and refresh token in JSON format.
   /// Throws [ApiException] if the refresh token is invalid or if the refresh operation fails.
   Future<Response> refresh(Request request);
+
+  /// Updates the authenticated user's details.
+  ///
+  /// Returns a [Response] containing the user's details in JSON format.
+  /// Throws [ApiException] if the operation fails.
+  Future<Response> update(Request request);
 }

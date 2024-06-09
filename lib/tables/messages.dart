@@ -1,6 +1,6 @@
 import 'package:chat_server/database/database.dart';
-import 'package:chat_server/models/chats.dart';
-import 'package:chat_server/models/users.dart';
+import 'package:chat_server/tables/chats.dart';
+import 'package:chat_server/tables/users.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 
@@ -40,7 +40,7 @@ class Messages extends Table {
 }
 
 /// Extension on [Message] to convert it to a JSON response format.
-extension MessageToResponse on Message {
+extension MessageDataExtension on Message {
   /// Converts the [Message] instance to a map for JSON response.
   Map<String, dynamic> toResponse() {
     return {

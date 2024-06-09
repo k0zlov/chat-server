@@ -1,6 +1,6 @@
 import 'package:chat_server/database/database.dart';
-import 'package:chat_server/models/chats.dart';
-import 'package:chat_server/models/users.dart';
+import 'package:chat_server/tables/chats.dart';
+import 'package:chat_server/tables/users.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 
@@ -47,35 +47,12 @@ class ChatParticipants extends Table {
 }
 
 /// Extension on [ChatParticipant] to convert it to a JSON response format.
-extension ChatParticipantsToResponse on ChatParticipant {
+extension ChatParticipantDataExtension on ChatParticipant {
   /// Converts the [ChatParticipant] instance to a map for JSON response.
   Map<String, dynamic> toResponse() {
     return {
       ...toJson(),
       'joinedAt': joinedAt.dateTime.toIso8601String(),
-    };
-  }
-}
-
-/// Container class to hold chat participant information.
-class ChatParticipantContainer {
-  /// Basic constructor of [ChatParticipantContainer]
-  const ChatParticipantContainer({
-    required this.participant,
-    required this.name,
-  });
-
-  /// The chat participant information.
-  final ChatParticipant participant;
-
-  /// The name of chat participant
-  final String name;
-
-  /// Converts the [ChatParticipantContainer] instance to a map for JSON response.
-  Map<String, dynamic> toJson() {
-    return {
-      ...participant.toResponse(),
-      'name': name,
     };
   }
 }

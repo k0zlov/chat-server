@@ -43,8 +43,18 @@ class AuthRoute extends ServerRoute {
     ];
 
     // Middleware to validate login request body.
-    final Middleware loginValidator =
-        validatorMiddleware(bodyParams: loginParams);
+    final Middleware loginValidator = validatorMiddleware(
+      bodyParams: loginParams,
+    );
+
+    const updateParams = <ValidatorParameter<String>>[
+      ValidatorParameter(name: 'name', nullable: true),
+      ValidatorParameter(name: 'bio', nullable: true),
+    ];
+
+    final Middleware updateValidator = validatorMiddleware(
+      bodyParams: updateParams,
+    );
 
     return router
       // Route to get user details, protected by authentication middleware.
@@ -58,6 +68,12 @@ class AuthRoute extends ServerRoute {
       // Route to login, protected by login validation middleware.
       ..postMw('/login', controller.login, [loginValidator])
       // Route to register, protected by registration validation middleware.
-      ..postMw('/register', controller.register, [regValidator]);
+      ..postMw('/register', controller.register, [regValidator])
+      // Route to update user details, protected by authentication middleware.
+      ..postMw(
+        '/user/update',
+        controller.update,
+        [authMiddleware, updateValidator],
+      );
   }
 }

@@ -1,9 +1,9 @@
-import 'package:chat_server/models/chat_participants.dart';
-import 'package:chat_server/models/chats.dart';
-import 'package:chat_server/models/contacts.dart';
-import 'package:chat_server/models/messages.dart';
-import 'package:chat_server/models/posts.dart';
-import 'package:chat_server/models/users.dart';
+import 'package:chat_server/tables/chat_participants.dart';
+import 'package:chat_server/tables/chats.dart';
+import 'package:chat_server/tables/contacts.dart';
+import 'package:chat_server/tables/messages.dart';
+import 'package:chat_server/tables/posts.dart';
+import 'package:chat_server/tables/users.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 

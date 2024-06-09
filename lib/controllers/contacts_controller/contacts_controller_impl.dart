@@ -4,7 +4,7 @@ import 'package:chat_server/controllers/contacts_controller/contacts_controller.
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/contacts_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
-import 'package:chat_server/models/contacts.dart';
+import 'package:chat_server/models/contact.dart';
 import 'package:chat_server/utils/request_validator.dart';
 import 'package:drift/drift.dart';
 import 'package:shelf/shelf.dart';
@@ -23,7 +23,7 @@ class ContactsControllerImpl implements ContactsController {
   Future<Response> getAll(Request request) async {
     final User user = request.context['user']! as User;
 
-    final List<ContactContainer> containers = await database.getAllContacts(
+    final List<ContactModel> containers = await database.getAllContacts(
       userId: user.id,
     );
 
@@ -45,7 +45,7 @@ class ContactsControllerImpl implements ContactsController {
 
     final User user = request.context['user']! as User;
 
-    final ContactContainer container = await database.addContact(
+    final ContactModel container = await database.addContact(
       userId: user.id,
       contactUserEmail: contactUserEmail,
     );
@@ -84,7 +84,7 @@ class ContactsControllerImpl implements ContactsController {
 
     final User user = request.context['user']! as User;
 
-    final List<ContactContainer> userContacts = await database.getAllContacts(
+    final List<ContactModel> userContacts = await database.getAllContacts(
       userId: user.id,
     );
 

@@ -2,8 +2,12 @@ import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/messages_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
-import 'package:chat_server/models/chat_participants.dart';
-import 'package:chat_server/models/chats.dart';
+import 'package:chat_server/models/chat.dart';
+import 'package:chat_server/models/chat_participant.dart';
+import 'package:chat_server/models/message.dart';
+import 'package:chat_server/tables/chat_participants.dart';
+import 'package:chat_server/tables/chats.dart';
+import 'package:chat_server/tables/users.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
@@ -14,13 +18,13 @@ extension ChatsExtension on Database {
   /// Assigns the user as the owner of the chat.
   ///
   /// Throws [ApiException] if the chat or chat participant could not be created.
-  Future<ChatContainer> createChat({
+  Future<ChatModel> createChat({
     required User user,
     required String title,
     required ChatType? chatType,
     required String? description,
   }) async {
-    return transaction<ChatContainer>(() async {
+    return transaction<ChatModel>(() async {
       final ChatsCompanion chatsCompanion = ChatsCompanion.insert(
         title: title,
         description: Value(description),
@@ -49,14 +53,14 @@ extension ChatsExtension on Database {
         );
       }
 
-      final ChatParticipantContainer container = ChatParticipantContainer(
+      final ChatParticipantModel model = ChatParticipantModel(
         participant: participant,
-        name: user.name,
+        user: user,
       );
 
-      return ChatContainer(
+      return ChatModel(
         chat: chat,
-        participants: [container],
+        participants: [model],
         messages: [],
       );
     });
@@ -102,11 +106,11 @@ extension ChatsExtension on Database {
   /// Updated a chat if the requester is the owner or admin of the chat.
   ///
   /// Throws [ApiException] if the requester is not the owner, admin.
-  Future<ChatContainer> updateChat({
+  Future<ChatModel> updateChat({
     required Chat chat,
     required int userId,
   }) async {
-    return transaction<ChatContainer>(() async {
+    return transaction<ChatModel>(() async {
       final authorQuery = chatParticipants.select()
         ..where(
           (tbl) => tbl.chatId.equals(chat.id) & tbl.userId.equals(userId),
@@ -139,22 +143,21 @@ extension ChatsExtension on Database {
         throw const ApiException.internalServerError(errorMessage);
       }
 
-      final List<ChatParticipantContainer> participants =
-          await getChatParticipants(
+      final List<ChatParticipantModel> participants = await getChatParticipants(
         chatId: chat.id,
       );
 
-      final List<Message> messages = await getAllMessages(
+      final List<MessageModel> messages = await getAllMessages(
         chatId: chat.id,
       );
 
-      final ChatContainer container = ChatContainer(
+      final ChatModel model = ChatModel(
         chat: chat,
         participants: participants,
         messages: messages,
       );
 
-      return container;
+      return model;
     });
   }
 
@@ -163,8 +166,8 @@ extension ChatsExtension on Database {
   /// Excludes private chats from the results.
   ///
   /// Throws [ApiException] if there is an error during the search.
-  Future<List<ChatContainer>> searchChats({required String title}) async {
-    return transaction<List<ChatContainer>>(() async {
+  Future<List<ChatModel>> searchChats({required String title}) async {
+    return transaction<List<ChatModel>>(() async {
       final chatsQuery = chats.select()
         ..where(
           (tbl) =>
@@ -174,11 +177,11 @@ extension ChatsExtension on Database {
 
       final List<Chat> searchedChats = await chatsQuery.get();
 
-      final List<ChatContainer> containers = [];
+      final List<ChatModel> models = [];
 
       for (final chat in searchedChats) {
-        containers.add(
-          ChatContainer(
+        models.add(
+          ChatModel(
             chat: chat,
             participants: await getChatParticipants(chatId: chat.id),
             messages: await getAllMessages(chatId: chat.id),
@@ -186,7 +189,7 @@ extension ChatsExtension on Database {
         );
       }
 
-      return containers;
+      return models;
     });
   }
 
@@ -213,17 +216,17 @@ extension ChatsExtension on Database {
   /// Adds a user to a chat.
   ///
   /// Throws [ApiException] if the chat does not exist or the user is already in the chat.
-  Future<ChatContainer> joinChat({
+  Future<ChatModel> joinChat({
     required int chatId,
     required User user,
   }) async {
-    return transaction<ChatContainer>(() async {
+    return transaction<ChatModel>(() async {
       final Chat chat = await getChatOrThrow(chatId);
 
-      final List<ChatParticipantContainer> participants =
+      final List<ChatParticipantModel> participants =
           await getChatParticipants(chatId: chatId);
 
-      final ChatParticipantContainer? userParticipant = participants
+      final ChatParticipantModel? userParticipant = participants
           .singleWhereOrNull((p) => p.participant.userId == user.id);
 
       if (userParticipant != null) {
@@ -242,18 +245,18 @@ extension ChatsExtension on Database {
         );
       }
 
-      final List<Message> messages = await getAllMessages(chatId: chat.id);
+      final List<MessageModel> messages = await getAllMessages(chatId: chat.id);
 
-      final ChatContainer container = ChatContainer(
+      final ChatModel model = ChatModel(
         chat: chat,
         participants: [
           ...participants,
-          ChatParticipantContainer(participant: participant, name: user.name),
+          ChatParticipantModel(participant: participant, user: user),
         ],
         messages: messages,
       );
 
-      return container;
+      return model;
     });
   }
 
@@ -293,13 +296,13 @@ extension ChatsExtension on Database {
   ///   3. Get all chats where the user is a participant using the list of chat IDs.
   ///   4. Get all participants for all chats in one query.
   ///   5. Group participants by chat ID.
-  ///   6. Create ChatContainer for each chat with its participants.
+  ///   6. Create ChatModel for each chat with its participants.
   ///
   /// Throws [ApiException] if there is an error retrieving the chats.
-  Future<List<ChatContainer>> getUserChats({
+  Future<List<ChatModel>> getUserChats({
     required int userId,
   }) async {
-    return transaction<List<ChatContainer>>(() async {
+    return transaction<List<ChatModel>>(() async {
       final List<ChatParticipant> userParticipants = await getUserParticipants(
         userId: userId,
       );
@@ -311,14 +314,14 @@ extension ChatsExtension on Database {
       final chatsQuery = chats.select()..where((tbl) => tbl.id.isIn(chatIds));
       final List<Chat> userChats = await chatsQuery.get();
 
-      final Map<int, List<ChatParticipantContainer>> containersByChatId = {};
+      final Map<int, List<ChatParticipantModel>> participantsByChatId = {};
 
       for (final chat in userChats) {
-        final containers = await getChatParticipants(
+        final models = await getChatParticipants(
           chatId: chat.id,
         );
 
-        containersByChatId.addAll({chat.id: containers});
+        participantsByChatId.addAll({chat.id: models});
       }
 
       final messagesQuery = messages.select()
@@ -328,15 +331,29 @@ extension ChatsExtension on Database {
 
       final List<Message> allMessages = await messagesQuery.get();
 
-      final Map<int, List<Message>> messagesByChatId = {};
+      final Map<int, List<MessageModel>> messagesByChatId = {};
+
+      final List<int> authorIds = allMessages.map((m) => m.userId).toList();
+
+      final authorsQuery = users.select()
+        ..where((tbl) => tbl.id.isIn(authorIds));
+
+      final List<User> authors = await authorsQuery.get();
+
       for (final message in allMessages) {
-        messagesByChatId.putIfAbsent(message.chatId, () => []).add(message);
+        final User author =
+            authors.singleWhereOrNull((u) => u.id == message.userId) ??
+                UserDataExtension.notFoundUser;
+
+        messagesByChatId.putIfAbsent(message.chatId, () => []).add(
+              MessageModel(message: message, user: author),
+            );
       }
 
-      final List<ChatContainer> response = userChats.map((chat) {
-        return ChatContainer(
+      final List<ChatModel> response = userChats.map((chat) {
+        return ChatModel(
           chat: chat,
-          participants: containersByChatId[chat.id] ?? [],
+          participants: participantsByChatId[chat.id] ?? [],
           messages: messagesByChatId[chat.id] ?? [],
         );
       }).toList();
