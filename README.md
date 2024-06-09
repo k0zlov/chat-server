@@ -115,6 +115,10 @@ Here is a brief overview of the main API endpoints. Detailed documentation can b
 - `POST /chats/join`: Join a chat.
 - `POST /chats/leave`: Leave a chat.
 - `GET /chats/search`: Search for chats by title.
+- `POST /chats/pin`: Pin chat
+- `DELETE /chats/unpin`: Unpin chat
+- `POST /chats/archive`: Archive chat
+- `DELETE /chats/unarchive`: Unarchive chat
 
 ### Contacts Controller
 
