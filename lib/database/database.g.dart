@@ -81,8 +81,13 @@ class $PostsTable extends Posts with TableInfo<$PostsTable, Post> {
 }
 
 class Post extends DataClass implements Insertable<Post> {
+  /// Unique identifier for each post.
   final int id;
+
+  /// Subject of the post.
   final String subject;
+
+  /// Content of the post.
   final String content;
   const Post({required this.id, required this.subject, required this.content});
   @override
@@ -269,6 +274,14 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
       type: DriftSqlType.bool,
       requiredDuringInsert: false,
       defaultValue: const Constant(false));
+  static const VerificationMeta _lastActivityAtMeta =
+      const VerificationMeta('lastActivityAt');
+  @override
+  late final GeneratedColumn<PgDateTime> lastActivityAt =
+      GeneratedColumn<PgDateTime>('last_activity_at', aliasedName, false,
+          type: PgTypes.timestampWithTimezone,
+          requiredDuringInsert: false,
+          defaultValue: const FunctionCallExpression('now', []));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -286,6 +299,7 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
         refreshToken,
         activation,
         isActivated,
+        lastActivityAt,
         createdAt
       ];
   @override
@@ -341,6 +355,12 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           isActivated.isAcceptableOrUnknown(
               data['is_activated']!, _isActivatedMeta));
     }
+    if (data.containsKey('last_activity_at')) {
+      context.handle(
+          _lastActivityAtMeta,
+          lastActivityAt.isAcceptableOrUnknown(
+              data['last_activity_at']!, _lastActivityAtMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -368,6 +388,9 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
           .read(DriftSqlType.string, data['${effectivePrefix}activation'])!,
       isActivated: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}is_activated'])!,
+      lastActivityAt: attachedDatabase.typeMapping.read(
+          PgTypes.timestampWithTimezone,
+          data['${effectivePrefix}last_activity_at'])!,
       createdAt: attachedDatabase.typeMapping.read(
           PgTypes.timestampWithTimezone, data['${effectivePrefix}created_at'])!,
     );
@@ -380,13 +403,31 @@ class $UsersTable extends Users with TableInfo<$UsersTable, User> {
 }
 
 class User extends DataClass implements Insertable<User> {
+  /// Unique identifier for each user.
   final int id;
+
+  /// Name of the user.
   final String name;
+
+  /// Email of the user, must be unique.
   final String email;
+
+  /// Password of the user, with a minimum length constraint.
   final String password;
+
+  /// Refresh token of the user, must be unique.
   final String refreshToken;
+
+  /// Activation code for the user, must be unique.
   final String activation;
+
+  /// Indicates whether the user is activated, with a default value of false.
   final bool isActivated;
+
+  /// Timestamp when the user had last activity, with a default value of the current timestamp.
+  final PgDateTime lastActivityAt;
+
+  /// Timestamp when the user was created, with a default value of the current timestamp.
   final PgDateTime createdAt;
   const User(
       {required this.id,
@@ -396,6 +437,7 @@ class User extends DataClass implements Insertable<User> {
       required this.refreshToken,
       required this.activation,
       required this.isActivated,
+      required this.lastActivityAt,
       required this.createdAt});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -407,6 +449,8 @@ class User extends DataClass implements Insertable<User> {
     map['refresh_token'] = Variable<String>(refreshToken);
     map['activation'] = Variable<String>(activation);
     map['is_activated'] = Variable<bool>(isActivated);
+    map['last_activity_at'] =
+        Variable<PgDateTime>(lastActivityAt, PgTypes.timestampWithTimezone);
     map['created_at'] =
         Variable<PgDateTime>(createdAt, PgTypes.timestampWithTimezone);
     return map;
@@ -421,6 +465,7 @@ class User extends DataClass implements Insertable<User> {
       refreshToken: Value(refreshToken),
       activation: Value(activation),
       isActivated: Value(isActivated),
+      lastActivityAt: Value(lastActivityAt),
       createdAt: Value(createdAt),
     );
   }
@@ -436,6 +481,7 @@ class User extends DataClass implements Insertable<User> {
       refreshToken: serializer.fromJson<String>(json['refreshToken']),
       activation: serializer.fromJson<String>(json['activation']),
       isActivated: serializer.fromJson<bool>(json['isActivated']),
+      lastActivityAt: serializer.fromJson<PgDateTime>(json['lastActivityAt']),
       createdAt: serializer.fromJson<PgDateTime>(json['createdAt']),
     );
   }
@@ -450,6 +496,7 @@ class User extends DataClass implements Insertable<User> {
       'refreshToken': serializer.toJson<String>(refreshToken),
       'activation': serializer.toJson<String>(activation),
       'isActivated': serializer.toJson<bool>(isActivated),
+      'lastActivityAt': serializer.toJson<PgDateTime>(lastActivityAt),
       'createdAt': serializer.toJson<PgDateTime>(createdAt),
     };
   }
@@ -462,6 +509,7 @@ class User extends DataClass implements Insertable<User> {
           String? refreshToken,
           String? activation,
           bool? isActivated,
+          PgDateTime? lastActivityAt,
           PgDateTime? createdAt}) =>
       User(
         id: id ?? this.id,
@@ -471,6 +519,7 @@ class User extends DataClass implements Insertable<User> {
         refreshToken: refreshToken ?? this.refreshToken,
         activation: activation ?? this.activation,
         isActivated: isActivated ?? this.isActivated,
+        lastActivityAt: lastActivityAt ?? this.lastActivityAt,
         createdAt: createdAt ?? this.createdAt,
       );
   @override
@@ -483,6 +532,7 @@ class User extends DataClass implements Insertable<User> {
           ..write('refreshToken: $refreshToken, ')
           ..write('activation: $activation, ')
           ..write('isActivated: $isActivated, ')
+          ..write('lastActivityAt: $lastActivityAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -490,7 +540,7 @@ class User extends DataClass implements Insertable<User> {
 
   @override
   int get hashCode => Object.hash(id, name, email, password, refreshToken,
-      activation, isActivated, createdAt);
+      activation, isActivated, lastActivityAt, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -502,6 +552,7 @@ class User extends DataClass implements Insertable<User> {
           other.refreshToken == this.refreshToken &&
           other.activation == this.activation &&
           other.isActivated == this.isActivated &&
+          other.lastActivityAt == this.lastActivityAt &&
           other.createdAt == this.createdAt);
 }
 
@@ -513,6 +564,7 @@ class UsersCompanion extends UpdateCompanion<User> {
   final Value<String> refreshToken;
   final Value<String> activation;
   final Value<bool> isActivated;
+  final Value<PgDateTime> lastActivityAt;
   final Value<PgDateTime> createdAt;
   const UsersCompanion({
     this.id = const Value.absent(),
@@ -522,6 +574,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     this.refreshToken = const Value.absent(),
     this.activation = const Value.absent(),
     this.isActivated = const Value.absent(),
+    this.lastActivityAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   });
   UsersCompanion.insert({
@@ -532,6 +585,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     required String refreshToken,
     required String activation,
     this.isActivated = const Value.absent(),
+    this.lastActivityAt = const Value.absent(),
     this.createdAt = const Value.absent(),
   })  : name = Value(name),
         email = Value(email),
@@ -546,6 +600,7 @@ class UsersCompanion extends UpdateCompanion<User> {
     Expression<String>? refreshToken,
     Expression<String>? activation,
     Expression<bool>? isActivated,
+    Expression<PgDateTime>? lastActivityAt,
     Expression<PgDateTime>? createdAt,
   }) {
     return RawValuesInsertable({
@@ -556,6 +611,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       if (refreshToken != null) 'refresh_token': refreshToken,
       if (activation != null) 'activation': activation,
       if (isActivated != null) 'is_activated': isActivated,
+      if (lastActivityAt != null) 'last_activity_at': lastActivityAt,
       if (createdAt != null) 'created_at': createdAt,
     });
   }
@@ -568,6 +624,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       Value<String>? refreshToken,
       Value<String>? activation,
       Value<bool>? isActivated,
+      Value<PgDateTime>? lastActivityAt,
       Value<PgDateTime>? createdAt}) {
     return UsersCompanion(
       id: id ?? this.id,
@@ -577,6 +634,7 @@ class UsersCompanion extends UpdateCompanion<User> {
       refreshToken: refreshToken ?? this.refreshToken,
       activation: activation ?? this.activation,
       isActivated: isActivated ?? this.isActivated,
+      lastActivityAt: lastActivityAt ?? this.lastActivityAt,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -605,6 +663,10 @@ class UsersCompanion extends UpdateCompanion<User> {
     if (isActivated.present) {
       map['is_activated'] = Variable<bool>(isActivated.value);
     }
+    if (lastActivityAt.present) {
+      map['last_activity_at'] = Variable<PgDateTime>(
+          lastActivityAt.value, PgTypes.timestampWithTimezone);
+    }
     if (createdAt.present) {
       map['created_at'] =
           Variable<PgDateTime>(createdAt.value, PgTypes.timestampWithTimezone);
@@ -622,6 +684,7 @@ class UsersCompanion extends UpdateCompanion<User> {
           ..write('refreshToken: $refreshToken, ')
           ..write('activation: $activation, ')
           ..write('isActivated: $isActivated, ')
+          ..write('lastActivityAt: $lastActivityAt, ')
           ..write('createdAt: $createdAt')
           ..write(')'))
         .toString();
@@ -734,10 +797,19 @@ class $ChatsTable extends Chats with TableInfo<$ChatsTable, Chat> {
 }
 
 class Chat extends DataClass implements Insertable<Chat> {
+  /// Unique identifier for each chat.
   final int id;
+
+  /// Type of the chat, with a default value of 'group'.
   final ChatType type;
+
+  /// Title of the chat.
   final String title;
+
+  /// Description of the chat, which can be nullable.
   final String? description;
+
+  /// Timestamp when the chat was created, with a default value of the current timestamp.
   final PgDateTime createdAt;
   const Chat(
       {required this.id,
@@ -1008,8 +1080,13 @@ class $ContactsTable extends Contacts with TableInfo<$ContactsTable, Contact> {
 }
 
 class Contact extends DataClass implements Insertable<Contact> {
+  /// References the user ID from the [Users] table, with cascade delete.
   final int userId;
+
+  /// References the contact user ID from the [Users] table, with cascade delete.
   final int contactUserId;
+
+  /// Timestamp when the contact was added, with a default value of the current timestamp.
   final PgDateTime addedAt;
   const Contact(
       {required this.userId,
@@ -1255,9 +1332,16 @@ class $ChatParticipantsTable extends ChatParticipants
 }
 
 class ChatParticipant extends DataClass implements Insertable<ChatParticipant> {
+  /// References the chat ID from the [Chats] table.
   final int chatId;
+
+  /// References the user ID from the [Users] table.
   final int userId;
+
+  /// Role of the chat participant, with a default value of 'member'.
   final ChatParticipantRole role;
+
+  /// Timestamp when the user joined the chat, with a default value of the current timestamp.
   final PgDateTime joinedAt;
   const ChatParticipant(
       {required this.chatId,
@@ -1561,11 +1645,22 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
 }
 
 class Message extends DataClass implements Insertable<Message> {
+  /// Unique identifier for each message.
   final int id;
+
+  /// Content of the message, with a minimum length constraint.
   final String content;
+
+  /// References the user ID from the [Users] table, with cascade delete.
   final int userId;
+
+  /// References the chat ID from the [Chats] table, with cascade delete.
   final int chatId;
+
+  /// Timestamp when the message was last updated, with a default value of the current timestamp.
   final PgDateTime updatedAt;
+
+  /// Timestamp when the message was created, with a default value of the current timestamp.
   final PgDateTime createdAt;
   const Message(
       {required this.id,
@@ -1942,6 +2037,7 @@ typedef $$UsersTableInsertCompanionBuilder = UsersCompanion Function({
   required String refreshToken,
   required String activation,
   Value<bool> isActivated,
+  Value<PgDateTime> lastActivityAt,
   Value<PgDateTime> createdAt,
 });
 typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
@@ -1952,6 +2048,7 @@ typedef $$UsersTableUpdateCompanionBuilder = UsersCompanion Function({
   Value<String> refreshToken,
   Value<String> activation,
   Value<bool> isActivated,
+  Value<PgDateTime> lastActivityAt,
   Value<PgDateTime> createdAt,
 });
 
@@ -1981,6 +2078,7 @@ class $$UsersTableTableManager extends RootTableManager<
             Value<String> refreshToken = const Value.absent(),
             Value<String> activation = const Value.absent(),
             Value<bool> isActivated = const Value.absent(),
+            Value<PgDateTime> lastActivityAt = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
           }) =>
               UsersCompanion(
@@ -1991,6 +2089,7 @@ class $$UsersTableTableManager extends RootTableManager<
             refreshToken: refreshToken,
             activation: activation,
             isActivated: isActivated,
+            lastActivityAt: lastActivityAt,
             createdAt: createdAt,
           ),
           getInsertCompanionBuilder: ({
@@ -2001,6 +2100,7 @@ class $$UsersTableTableManager extends RootTableManager<
             required String refreshToken,
             required String activation,
             Value<bool> isActivated = const Value.absent(),
+            Value<PgDateTime> lastActivityAt = const Value.absent(),
             Value<PgDateTime> createdAt = const Value.absent(),
           }) =>
               UsersCompanion.insert(
@@ -2011,6 +2111,7 @@ class $$UsersTableTableManager extends RootTableManager<
             refreshToken: refreshToken,
             activation: activation,
             isActivated: isActivated,
+            lastActivityAt: lastActivityAt,
             createdAt: createdAt,
           ),
         ));
@@ -2063,6 +2164,11 @@ class $$UsersTableFilterComposer
 
   ColumnFilters<bool> get isActivated => $state.composableBuilder(
       column: $state.table.isActivated,
+      builder: (column, joinBuilders) =>
+          ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnFilters<PgDateTime> get lastActivityAt => $state.composableBuilder(
+      column: $state.table.lastActivityAt,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
 
@@ -2160,6 +2266,11 @@ class $$UsersTableOrderingComposer
 
   ColumnOrderings<bool> get isActivated => $state.composableBuilder(
       column: $state.table.isActivated,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
+  ColumnOrderings<PgDateTime> get lastActivityAt => $state.composableBuilder(
+      column: $state.table.lastActivityAt,
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 

@@ -21,10 +21,10 @@ class ContactsControllerImpl implements ContactsController {
 
   @override
   Future<Response> getAll(Request request) async {
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final List<ContactContainer> containers = await database.getAllContacts(
-      userId: userId,
+      userId: user.id,
     );
 
     final List<Map<String, dynamic>> response = [];
@@ -43,10 +43,10 @@ class ContactsControllerImpl implements ContactsController {
 
     final String contactUserEmail = body['contactUserEmail'] as String;
 
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final ContactContainer container = await database.addContact(
-      userId: userId,
+      userId: user.id,
       contactUserEmail: contactUserEmail,
     );
 
@@ -60,11 +60,11 @@ class ContactsControllerImpl implements ContactsController {
 
     final String contactUserEmail = body['contactUserEmail'] as String;
 
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     try {
       await database.removeContact(
-        userId: userId,
+        userId: user.id,
         contactUserEmail: contactUserEmail,
       );
     } on ApiException {
@@ -82,10 +82,10 @@ class ContactsControllerImpl implements ContactsController {
   Future<Response> search(Request request) async {
     final String username = request.url.queryParameters['username']!;
 
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final List<ContactContainer> userContacts = await database.getAllContacts(
-      userId: userId,
+      userId: user.id,
     );
 
     final List<int> contactIds = userContacts
@@ -101,13 +101,13 @@ class ContactsControllerImpl implements ContactsController {
 
     final List<Map<String, dynamic>> response = [];
 
-    for (final User user in users) {
-      if (user.id == userId) continue;
+    for (final User u in users) {
+      if (u.id == user.id) continue;
 
       response.add({
-        'id': user.id,
-        'name': user.name,
-        'createdAt': user.createdAt.dateTime.toIso8601String(),
+        'id': u.id,
+        'name': u.name,
+        'createdAt': u.createdAt.dateTime.toIso8601String(),
       });
     }
 

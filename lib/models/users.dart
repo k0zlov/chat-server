@@ -25,6 +25,12 @@ class Users extends Table {
   /// Indicates whether the user is activated, with a default value of false.
   BoolColumn get isActivated => boolean().withDefault(const Constant(false))();
 
+  /// Timestamp when the user had last activity, with a default value of the current timestamp.
+  TimestampColumn get lastActivityAt =>
+      customType(PgTypes.timestampWithTimezone).withDefault(
+        const FunctionCallExpression('now', []),
+      )();
+
   /// Timestamp when the user was created, with a default value of the current timestamp.
   TimestampColumn get createdAt =>
       customType(PgTypes.timestampWithTimezone).withDefault(
@@ -43,6 +49,7 @@ extension UserToResponse on User {
     return {
       ...toJson(),
       'createdAt': createdAt.dateTime.toIso8601String(),
+      'lastActivityAt': lastActivityAt.dateTime.toIso8601String(),
     };
   }
 }

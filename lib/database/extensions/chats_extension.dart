@@ -1,7 +1,6 @@
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/messages_extension.dart';
-import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat_participants.dart';
 import 'package:chat_server/models/chats.dart';
@@ -16,20 +15,12 @@ extension ChatsExtension on Database {
   ///
   /// Throws [ApiException] if the chat or chat participant could not be created.
   Future<ChatContainer> createChat({
-    required int userId,
+    required User user,
     required String title,
     required ChatType? chatType,
     required String? description,
   }) async {
     return transaction<ChatContainer>(() async {
-      final User? user = await getUserFromId(userId: userId);
-
-      if (user == null) {
-        throw const ApiException.unauthorized(
-          'There is no such user',
-        );
-      }
-
       final ChatsCompanion chatsCompanion = ChatsCompanion.insert(
         title: title,
         description: Value(description),
@@ -45,7 +36,7 @@ extension ChatsExtension on Database {
 
       final participantsCompanion = ChatParticipantsCompanion.insert(
         chatId: chat.id,
-        userId: userId,
+        userId: user.id,
       ).copyWith(role: const Value(ChatParticipantRole.owner));
 
       final ChatParticipant? participant = await chatParticipants
@@ -76,7 +67,7 @@ extension ChatsExtension on Database {
   /// Throws [ApiException] if the chat does not exist or the requester is not the owner.
   Future<bool> deleteChat({
     required int chatId,
-    required int ownerId,
+    required int userId,
   }) async {
     return transaction<bool>(() async {
       final chat = await getChatOrThrow(chatId);
@@ -85,7 +76,7 @@ extension ChatsExtension on Database {
         ..where(
           (tbl) =>
               tbl.chatId.equals(chatId) &
-              tbl.userId.equals(ownerId) &
+              tbl.userId.equals(userId) &
               tbl.role.equals(ChatParticipantRole.owner.name),
         );
 
@@ -224,24 +215,16 @@ extension ChatsExtension on Database {
   /// Throws [ApiException] if the chat does not exist or the user is already in the chat.
   Future<ChatContainer> joinChat({
     required int chatId,
-    required int userId,
+    required User user,
   }) async {
     return transaction<ChatContainer>(() async {
       final Chat chat = await getChatOrThrow(chatId);
 
-      final User? user = await getUserFromId(userId: userId);
-
-      if (user == null) {
-        throw const ApiException.internalServerError(
-          'Could not find user with such id',
-        );
-      }
-
       final List<ChatParticipantContainer> participants =
           await getChatParticipants(chatId: chatId);
 
-      final ChatParticipantContainer? userParticipant =
-          participants.singleWhereOrNull((p) => p.participant.userId == userId);
+      final ChatParticipantContainer? userParticipant = participants
+          .singleWhereOrNull((p) => p.participant.userId == user.id);
 
       if (userParticipant != null) {
         throw const ApiException.badRequest('You are already in this chat');
@@ -250,7 +233,7 @@ extension ChatsExtension on Database {
       final ChatParticipant? participant = await chatParticipants
           .insert()
           .insertReturningOrNull(
-            ChatParticipantsCompanion.insert(chatId: chatId, userId: userId),
+            ChatParticipantsCompanion.insert(chatId: chatId, userId: user.id),
           );
 
       if (participant == null) {

@@ -30,13 +30,13 @@ class MessagesControllerImpl implements MessagesController {
       request,
     );
 
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final int chatId = body['chatId'] as int;
     final String content = body['content'] as String;
 
     final Message message = await database.sendMessage(
-      userId: userId,
+      userId: user.id,
       chatId: chatId,
       content: content,
     );
@@ -46,7 +46,7 @@ class MessagesControllerImpl implements MessagesController {
 
   @override
   Future<Response> delete(Request request) async {
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final String messageIdRaw = request.url.queryParameters['messageId']!;
 
@@ -62,7 +62,7 @@ class MessagesControllerImpl implements MessagesController {
 
     await database.deleteMessage(
       messageId: messageId,
-      userId: userId,
+      userId: user.id,
     );
 
     return Response.ok(jsonEncode('Successfully deleted message'));
@@ -74,14 +74,14 @@ class MessagesControllerImpl implements MessagesController {
       request,
     );
 
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final int messageId = body['messageId'] as int;
     final String content = body['content'] as String;
 
     final Message message = await database.updateMessage(
       messageId: messageId,
-      userId: userId,
+      userId: user.id,
       content: content,
     );
 

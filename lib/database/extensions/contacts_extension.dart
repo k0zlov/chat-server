@@ -1,5 +1,4 @@
 import 'package:chat_server/database/database.dart';
-import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/contacts.dart';
 import 'package:collection/collection.dart';
@@ -19,21 +18,10 @@ extension ContactsExtension on Database {
   ///
   /// Returns:
   ///   A Future that resolves to a list of [ContactContainer] instances.
-  ///
-  /// Throws:
-  ///   [ApiException.unauthorized] if the user with the specified ID cannot be found.
   Future<List<ContactContainer>> getAllContacts({
     required int userId,
   }) {
     return transaction<List<ContactContainer>>(() async {
-      final User? user = await getUserFromId(userId: userId);
-
-      if (user == null) {
-        throw const ApiException.unauthorized(
-          'Could not find user with such id',
-        );
-      }
-
       final query = contacts.select()
         ..where((tbl) => tbl.userId.equals(userId));
 
@@ -62,6 +50,7 @@ extension ContactsExtension on Database {
             contact: contact,
             name: user?.name ?? '',
             email: user?.email ?? '',
+            lastActivity: user?.lastActivityAt.dateTime ?? DateTime.now(),
           ),
         );
       }
@@ -127,6 +116,7 @@ extension ContactsExtension on Database {
         contact: contact,
         name: target.name,
         email: target.email,
+        lastActivity: target.lastActivityAt.dateTime,
       );
 
       return container;

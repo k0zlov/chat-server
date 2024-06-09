@@ -9,7 +9,10 @@ void _middleware() {
   getIt
     ..registerLazySingleton<Middleware>(
       instanceName: 'auth-middleware',
-      () => authMiddleware(tokenService: getIt()),
+      () => authMiddleware(
+        tokenService: getIt(),
+        database: getIt(),
+      ),
     )
     ..registerLazySingleton<Middleware>(
       instanceName: 'headers-middleware',

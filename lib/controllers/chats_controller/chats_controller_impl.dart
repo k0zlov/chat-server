@@ -21,10 +21,10 @@ class ChatsControllerImpl implements ChatsController {
 
   @override
   Future<Response> getAll(Request request) async {
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final List<ChatContainer> chats =
-        await database.getUserChats(userId: userId);
+        await database.getUserChats(userId: user.id);
 
     final List<Map<String, dynamic>> response = [];
 
@@ -37,7 +37,7 @@ class ChatsControllerImpl implements ChatsController {
 
   @override
   Future<Response> create(Request request) async {
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
       request,
@@ -62,7 +62,7 @@ class ChatsControllerImpl implements ChatsController {
     }
 
     final ChatContainer container = await database.createChat(
-      userId: userId,
+      user: user,
       title: title,
       chatType: chatType,
       description: description,
@@ -73,7 +73,7 @@ class ChatsControllerImpl implements ChatsController {
 
   @override
   Future<Response> delete(Request request) async {
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
     final String chatIdRaw = request.url.queryParameters['chatId']!;
 
     final int chatId;
@@ -87,7 +87,7 @@ class ChatsControllerImpl implements ChatsController {
 
     final bool result = await database.deleteChat(
       chatId: chatId,
-      ownerId: userId,
+      userId: user.id,
     );
 
     if (!result) {
@@ -104,7 +104,7 @@ class ChatsControllerImpl implements ChatsController {
       request,
     );
 
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final int chatId = body['chatId'] as int;
     final String? title = body['title'] as String?;
@@ -152,7 +152,7 @@ class ChatsControllerImpl implements ChatsController {
 
     final ChatContainer container = await database.updateChat(
       chat: modifiedChat,
-      userId: userId,
+      userId: user.id,
     );
 
     return Response.ok(jsonEncode(container.toJson()));
@@ -160,7 +160,7 @@ class ChatsControllerImpl implements ChatsController {
 
   @override
   Future<Response> join(Request request) async {
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
 
     final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
       request,
@@ -170,7 +170,7 @@ class ChatsControllerImpl implements ChatsController {
 
     final ChatContainer container = await database.joinChat(
       chatId: chatId,
-      userId: userId,
+      user: user,
     );
 
     return Response.ok(jsonEncode(container.toJson()));
@@ -178,7 +178,8 @@ class ChatsControllerImpl implements ChatsController {
 
   @override
   Future<Response> leave(Request request) async {
-    final int userId = request.context['userId']! as int;
+    final User user = request.context['user']! as User;
+
 
     final Map<String, dynamic> body = RequestValidator.getBodyFromContext(
       request,
@@ -189,7 +190,7 @@ class ChatsControllerImpl implements ChatsController {
     try {
       await database.leaveChat(
         chatId: chatId,
-        userId: userId,
+        userId: user.id,
       );
     } on ApiException {
       rethrow;

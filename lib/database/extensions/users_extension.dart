@@ -1,6 +1,7 @@
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:drift/drift.dart';
+import 'package:drift_postgres/drift_postgres.dart';
 
 extension UsersExtension on Database {
   Future<User?> getUserFromId({required int userId}) {
@@ -39,5 +40,16 @@ extension UsersExtension on Database {
         );
       }
     });
+  }
+
+  /// Updates user`s last activity timestamp
+  Future<void> updateLastActivity({
+    required User user,
+  }) async {
+    final User updatedUser = user.copyWith(
+      lastActivityAt: PgDateTime(DateTime.now()),
+    );
+
+    await users.update().replace(updatedUser);
   }
 }

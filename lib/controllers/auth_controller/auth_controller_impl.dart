@@ -37,10 +37,7 @@ class AuthControllerImpl implements AuthController {
     final User? user;
 
     try {
-      final int userId = request.context['userId']! as int;
-      user = await database.getUserFromId(
-        userId: userId,
-      );
+      user = request.context['user']! as User?;
     } catch (e) {
       throw const ApiException.unauthorized();
     }
@@ -225,11 +222,7 @@ class AuthControllerImpl implements AuthController {
 
   @override
   Future<Response> logout(Request request) async {
-    final int userId = request.context['userId']! as int;
-
-    final User? user = await (database.users.select()
-          ..where((tbl) => tbl.id.equals(userId)))
-        .getSingleOrNull();
+    final User? user = request.context['user']! as User?;
 
     if (user == null) {
       const errorMessage = 'Could not find user with such id';

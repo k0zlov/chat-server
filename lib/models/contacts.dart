@@ -54,6 +54,7 @@ class ContactContainer {
     required this.contact,
     required this.name,
     required this.email,
+    required this.lastActivity,
   });
 
   /// The [Contact] instance representing the contact details.
@@ -65,6 +66,9 @@ class ContactContainer {
   /// The email of the contact.
   final String email;
 
+  /// Timestamp when the contact had last activity,
+  final DateTime lastActivity;
+
   /// Converts the [ContactContainer] instance to a JSON-compatible map.
   ///
   /// Returns:
@@ -74,6 +78,7 @@ class ContactContainer {
       ...contact.toResponse(),
       'name': name,
       'email': email,
+      'lastActivityAt': lastActivity.toIso8601String(),
     };
   }
 }
