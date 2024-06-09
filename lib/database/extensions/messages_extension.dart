@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/archived_chats_extension.dart';
 import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/database/extensions/users_extension.dart';
@@ -103,6 +104,12 @@ extension MessagesExtension on Database {
         message: message,
         user: user,
       );
+
+      try {
+        await unarchiveChat(chatId: chatId, userId: user.id);
+      } catch (e) {
+        print(e);
+      }
 
       return model;
     });
