@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:chat_server/controllers/chats_controller/chats_controller.dart';
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/archived_chats_extension.dart';
 import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/chats_extension.dart';
+import 'package:chat_server/database/extensions/pinned_chats_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat.dart';
 import 'package:chat_server/models/chat_participant.dart';
@@ -170,6 +173,8 @@ class ChatsControllerImpl implements ChatsController {
       userId: user.id,
     );
 
+    unawaited(database.updateChatLastActivity(chatId: model.chat.id));
+
     return Response.ok(jsonEncode(model.toJson()));
   }
 
@@ -272,5 +277,85 @@ class ChatsControllerImpl implements ChatsController {
     }
 
     return Response.ok(jsonEncode(response));
+  }
+
+  @override
+  Future<Response> archiveChat(Request request) async {
+    final User user = request.context['user']! as User;
+
+    final String chatIdRaw = request.url.queryParameters['chatId']!;
+
+    final int chatId;
+
+    try {
+      chatId = int.parse(chatIdRaw);
+    } catch (e) {
+      const errorMessage = 'Query parameter chatId is invalid';
+      throw const ApiException.badRequest(errorMessage);
+    }
+
+    await database.archiveChat(chatId: chatId, userId: user.id);
+
+    return Response.ok(jsonEncode('Successfully archived chat'));
+  }
+
+  @override
+  Future<Response> unarchiveChat(Request request) async {
+    final User user = request.context['user']! as User;
+
+    final String chatIdRaw = request.url.queryParameters['chatId']!;
+
+    final int chatId;
+
+    try {
+      chatId = int.parse(chatIdRaw);
+    } catch (e) {
+      const errorMessage = 'Query parameter chatId is invalid';
+      throw const ApiException.badRequest(errorMessage);
+    }
+
+    await database.unarchiveChat(chatId: chatId, userId: user.id);
+
+    return Response.ok(jsonEncode('Successfully unarchived chat'));
+  }
+
+  @override
+  Future<Response> pinChat(Request request) async {
+    final User user = request.context['user']! as User;
+
+    final String chatIdRaw = request.url.queryParameters['chatId']!;
+
+    final int chatId;
+
+    try {
+      chatId = int.parse(chatIdRaw);
+    } catch (e) {
+      const errorMessage = 'Query parameter chatId is invalid';
+      throw const ApiException.badRequest(errorMessage);
+    }
+
+    await database.pinChat(chatId: chatId, userId: user.id);
+
+    return Response.ok(jsonEncode('Successfully pinned chat'));
+  }
+
+  @override
+  Future<Response> unpinChat(Request request) async {
+    final User user = request.context['user']! as User;
+
+    final String chatIdRaw = request.url.queryParameters['chatId']!;
+
+    final int chatId;
+
+    try {
+      chatId = int.parse(chatIdRaw);
+    } catch (e) {
+      const errorMessage = 'Query parameter chatId is invalid';
+      throw const ApiException.badRequest(errorMessage);
+    }
+
+    await database.unpinChat(chatId: chatId, userId: user.id);
+
+    return Response.ok(jsonEncode('Successfully unpinned chat'));
   }
 }

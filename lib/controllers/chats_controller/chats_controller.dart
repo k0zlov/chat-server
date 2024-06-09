@@ -55,4 +55,12 @@ abstract interface class ChatsController {
   Future<Response> search(Request request);
 
   Future<Response> updateParticipant(Request request);
+
+  Future<Response> pinChat(Request request);
+
+  Future<Response> unpinChat(Request request);
+
+  Future<Response> archiveChat(Request request);
+
+  Future<Response> unarchiveChat(Request request);
 }

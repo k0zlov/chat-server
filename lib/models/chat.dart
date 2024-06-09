@@ -10,6 +10,8 @@ class ChatModel {
     required this.chat,
     required this.participants,
     required this.messages,
+    required this.isArchived,
+    required this.isPinned,
   });
 
   /// The chat information.
@@ -20,6 +22,12 @@ class ChatModel {
 
   /// List of messages in the chat.
   final List<MessageModel> messages;
+
+  /// Indicates if chat pinned or not
+  final bool isPinned;
+
+  /// Indicates if chat archived or not
+  final bool isArchived;
 
   @override
   String toString() {
@@ -38,6 +46,8 @@ class ChatModel {
       ...chat.toResponse(),
       'participants': participantsResponse,
       'messages': messagesResponse,
+      'isPinned': isPinned,
+      'isArchived': isArchived,
     };
   }
 }

@@ -1620,6 +1620,14 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
           ),
           type: DriftSqlType.string,
           requiredDuringInsert: true);
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumnWithTypeConverter<MessageType, String> type =
+      GeneratedColumn<String>('type', aliasedName, false,
+              type: DriftSqlType.string,
+              requiredDuringInsert: false,
+              defaultValue: Constant(MessageType.basic.name))
+          .withConverter<MessageType>($MessagesTable.$convertertype);
   static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
   @override
   late final GeneratedColumn<int> userId = GeneratedColumn<int>(
@@ -1654,7 +1662,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
           defaultValue: const FunctionCallExpression('now', []));
   @override
   List<GeneratedColumn> get $columns =>
-      [id, content, userId, chatId, updatedAt, createdAt];
+      [id, content, type, userId, chatId, updatedAt, createdAt];
   @override
   String get aliasedName => _alias ?? actualTableName;
   @override
@@ -1674,6 +1682,7 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
     } else if (isInserting) {
       context.missing(_contentMeta);
     }
+    context.handle(_typeMeta, const VerificationResult.success());
     if (data.containsKey('user_id')) {
       context.handle(_userIdMeta,
           userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
@@ -1707,6 +1716,8 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
           .read(DriftSqlType.int, data['${effectivePrefix}id'])!,
       content: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}content'])!,
+      type: $MessagesTable.$convertertype.fromSql(attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}type'])!),
       userId: attachedDatabase.typeMapping
           .read(DriftSqlType.int, data['${effectivePrefix}user_id'])!,
       chatId: attachedDatabase.typeMapping
@@ -1722,6 +1733,9 @@ class $MessagesTable extends Messages with TableInfo<$MessagesTable, Message> {
   $MessagesTable createAlias(String alias) {
     return $MessagesTable(attachedDatabase, alias);
   }
+
+  static JsonTypeConverter2<MessageType, String, String> $convertertype =
+      const EnumNameConverter<MessageType>(MessageType.values);
 }
 
 class Message extends DataClass implements Insertable<Message> {
@@ -1730,6 +1744,9 @@ class Message extends DataClass implements Insertable<Message> {
 
   /// Content of the message, with a minimum length constraint.
   final String content;
+
+  /// Type of the message, with a default value of 'basic'.
+  final MessageType type;
 
   /// References the user ID from the [Users] table, with cascade delete.
   final int userId;
@@ -1745,6 +1762,7 @@ class Message extends DataClass implements Insertable<Message> {
   const Message(
       {required this.id,
       required this.content,
+      required this.type,
       required this.userId,
       required this.chatId,
       required this.updatedAt,
@@ -1754,6 +1772,9 @@ class Message extends DataClass implements Insertable<Message> {
     final map = <String, Expression>{};
     map['id'] = Variable<int>(id);
     map['content'] = Variable<String>(content);
+    {
+      map['type'] = Variable<String>($MessagesTable.$convertertype.toSql(type));
+    }
     map['user_id'] = Variable<int>(userId);
     map['chat_id'] = Variable<int>(chatId);
     map['updated_at'] =
@@ -1767,6 +1788,7 @@ class Message extends DataClass implements Insertable<Message> {
     return MessagesCompanion(
       id: Value(id),
       content: Value(content),
+      type: Value(type),
       userId: Value(userId),
       chatId: Value(chatId),
       updatedAt: Value(updatedAt),
@@ -1780,6 +1802,8 @@ class Message extends DataClass implements Insertable<Message> {
     return Message(
       id: serializer.fromJson<int>(json['id']),
       content: serializer.fromJson<String>(json['content']),
+      type: $MessagesTable.$convertertype
+          .fromJson(serializer.fromJson<String>(json['type'])),
       userId: serializer.fromJson<int>(json['userId']),
       chatId: serializer.fromJson<int>(json['chatId']),
       updatedAt: serializer.fromJson<PgDateTime>(json['updatedAt']),
@@ -1792,6 +1816,8 @@ class Message extends DataClass implements Insertable<Message> {
     return <String, dynamic>{
       'id': serializer.toJson<int>(id),
       'content': serializer.toJson<String>(content),
+      'type':
+          serializer.toJson<String>($MessagesTable.$convertertype.toJson(type)),
       'userId': serializer.toJson<int>(userId),
       'chatId': serializer.toJson<int>(chatId),
       'updatedAt': serializer.toJson<PgDateTime>(updatedAt),
@@ -1802,6 +1828,7 @@ class Message extends DataClass implements Insertable<Message> {
   Message copyWith(
           {int? id,
           String? content,
+          MessageType? type,
           int? userId,
           int? chatId,
           PgDateTime? updatedAt,
@@ -1809,6 +1836,7 @@ class Message extends DataClass implements Insertable<Message> {
       Message(
         id: id ?? this.id,
         content: content ?? this.content,
+        type: type ?? this.type,
         userId: userId ?? this.userId,
         chatId: chatId ?? this.chatId,
         updatedAt: updatedAt ?? this.updatedAt,
@@ -1819,6 +1847,7 @@ class Message extends DataClass implements Insertable<Message> {
     return (StringBuffer('Message(')
           ..write('id: $id, ')
           ..write('content: $content, ')
+          ..write('type: $type, ')
           ..write('userId: $userId, ')
           ..write('chatId: $chatId, ')
           ..write('updatedAt: $updatedAt, ')
@@ -1829,13 +1858,14 @@ class Message extends DataClass implements Insertable<Message> {
 
   @override
   int get hashCode =>
-      Object.hash(id, content, userId, chatId, updatedAt, createdAt);
+      Object.hash(id, content, type, userId, chatId, updatedAt, createdAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
       (other is Message &&
           other.id == this.id &&
           other.content == this.content &&
+          other.type == this.type &&
           other.userId == this.userId &&
           other.chatId == this.chatId &&
           other.updatedAt == this.updatedAt &&
@@ -1845,6 +1875,7 @@ class Message extends DataClass implements Insertable<Message> {
 class MessagesCompanion extends UpdateCompanion<Message> {
   final Value<int> id;
   final Value<String> content;
+  final Value<MessageType> type;
   final Value<int> userId;
   final Value<int> chatId;
   final Value<PgDateTime> updatedAt;
@@ -1852,6 +1883,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   const MessagesCompanion({
     this.id = const Value.absent(),
     this.content = const Value.absent(),
+    this.type = const Value.absent(),
     this.userId = const Value.absent(),
     this.chatId = const Value.absent(),
     this.updatedAt = const Value.absent(),
@@ -1860,6 +1892,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   MessagesCompanion.insert({
     this.id = const Value.absent(),
     required String content,
+    this.type = const Value.absent(),
     required int userId,
     required int chatId,
     this.updatedAt = const Value.absent(),
@@ -1870,6 +1903,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   static Insertable<Message> custom({
     Expression<int>? id,
     Expression<String>? content,
+    Expression<String>? type,
     Expression<int>? userId,
     Expression<int>? chatId,
     Expression<PgDateTime>? updatedAt,
@@ -1878,6 +1912,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     return RawValuesInsertable({
       if (id != null) 'id': id,
       if (content != null) 'content': content,
+      if (type != null) 'type': type,
       if (userId != null) 'user_id': userId,
       if (chatId != null) 'chat_id': chatId,
       if (updatedAt != null) 'updated_at': updatedAt,
@@ -1888,6 +1923,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
   MessagesCompanion copyWith(
       {Value<int>? id,
       Value<String>? content,
+      Value<MessageType>? type,
       Value<int>? userId,
       Value<int>? chatId,
       Value<PgDateTime>? updatedAt,
@@ -1895,6 +1931,7 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     return MessagesCompanion(
       id: id ?? this.id,
       content: content ?? this.content,
+      type: type ?? this.type,
       userId: userId ?? this.userId,
       chatId: chatId ?? this.chatId,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -1910,6 +1947,10 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     }
     if (content.present) {
       map['content'] = Variable<String>(content.value);
+    }
+    if (type.present) {
+      map['type'] =
+          Variable<String>($MessagesTable.$convertertype.toSql(type.value));
     }
     if (userId.present) {
       map['user_id'] = Variable<int>(userId.value);
@@ -1933,10 +1974,411 @@ class MessagesCompanion extends UpdateCompanion<Message> {
     return (StringBuffer('MessagesCompanion(')
           ..write('id: $id, ')
           ..write('content: $content, ')
+          ..write('type: $type, ')
           ..write('userId: $userId, ')
           ..write('chatId: $chatId, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('createdAt: $createdAt')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $PinnedChatsTable extends PinnedChats
+    with TableInfo<$PinnedChatsTable, PinnedChat> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $PinnedChatsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<int> chatId = GeneratedColumn<int>(
+      'chat_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES chats (id) ON DELETE CASCADE'));
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES users (id) ON DELETE CASCADE'));
+  @override
+  List<GeneratedColumn> get $columns => [chatId, userId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'pinned_chats';
+  @override
+  VerificationContext validateIntegrity(Insertable<PinnedChat> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chat_id')) {
+      context.handle(_chatIdMeta,
+          chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta));
+    } else if (isInserting) {
+      context.missing(_chatIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chatId, userId};
+  @override
+  PinnedChat map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return PinnedChat(
+      chatId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chat_id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}user_id'])!,
+    );
+  }
+
+  @override
+  $PinnedChatsTable createAlias(String alias) {
+    return $PinnedChatsTable(attachedDatabase, alias);
+  }
+}
+
+class PinnedChat extends DataClass implements Insertable<PinnedChat> {
+  /// Reference to the chat that is pinned.
+  ///
+  /// This column references the `id` column in the `Chats` table.
+  /// The `onDelete: KeyAction.cascade` ensures that if a chat is deleted,
+  /// all corresponding pinned chat entries will also be deleted.
+  final int chatId;
+
+  /// Reference to the user who pinned the chat.
+  ///
+  /// This column references the `id` column in the `Users` table.
+  /// The `onDelete: KeyAction.cascade` ensures that if a user is deleted,
+  /// all corresponding pinned chat entries will also be deleted.
+  final int userId;
+  const PinnedChat({required this.chatId, required this.userId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chat_id'] = Variable<int>(chatId);
+    map['user_id'] = Variable<int>(userId);
+    return map;
+  }
+
+  PinnedChatsCompanion toCompanion(bool nullToAbsent) {
+    return PinnedChatsCompanion(
+      chatId: Value(chatId),
+      userId: Value(userId),
+    );
+  }
+
+  factory PinnedChat.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return PinnedChat(
+      chatId: serializer.fromJson<int>(json['chatId']),
+      userId: serializer.fromJson<int>(json['userId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chatId': serializer.toJson<int>(chatId),
+      'userId': serializer.toJson<int>(userId),
+    };
+  }
+
+  PinnedChat copyWith({int? chatId, int? userId}) => PinnedChat(
+        chatId: chatId ?? this.chatId,
+        userId: userId ?? this.userId,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('PinnedChat(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(chatId, userId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is PinnedChat &&
+          other.chatId == this.chatId &&
+          other.userId == this.userId);
+}
+
+class PinnedChatsCompanion extends UpdateCompanion<PinnedChat> {
+  final Value<int> chatId;
+  final Value<int> userId;
+  final Value<int> rowid;
+  const PinnedChatsCompanion({
+    this.chatId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  PinnedChatsCompanion.insert({
+    required int chatId,
+    required int userId,
+    this.rowid = const Value.absent(),
+  })  : chatId = Value(chatId),
+        userId = Value(userId);
+  static Insertable<PinnedChat> custom({
+    Expression<int>? chatId,
+    Expression<int>? userId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chatId != null) 'chat_id': chatId,
+      if (userId != null) 'user_id': userId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  PinnedChatsCompanion copyWith(
+      {Value<int>? chatId, Value<int>? userId, Value<int>? rowid}) {
+    return PinnedChatsCompanion(
+      chatId: chatId ?? this.chatId,
+      userId: userId ?? this.userId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chatId.present) {
+      map['chat_id'] = Variable<int>(chatId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('PinnedChatsCompanion(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ArchivedChatsTable extends ArchivedChats
+    with TableInfo<$ArchivedChatsTable, ArchivedChat> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ArchivedChatsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _chatIdMeta = const VerificationMeta('chatId');
+  @override
+  late final GeneratedColumn<int> chatId = GeneratedColumn<int>(
+      'chat_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES chats (id) ON DELETE CASCADE'));
+  static const VerificationMeta _userIdMeta = const VerificationMeta('userId');
+  @override
+  late final GeneratedColumn<int> userId = GeneratedColumn<int>(
+      'user_id', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES users (id) ON DELETE CASCADE'));
+  @override
+  List<GeneratedColumn> get $columns => [chatId, userId];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'archived_chats';
+  @override
+  VerificationContext validateIntegrity(Insertable<ArchivedChat> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('chat_id')) {
+      context.handle(_chatIdMeta,
+          chatId.isAcceptableOrUnknown(data['chat_id']!, _chatIdMeta));
+    } else if (isInserting) {
+      context.missing(_chatIdMeta);
+    }
+    if (data.containsKey('user_id')) {
+      context.handle(_userIdMeta,
+          userId.isAcceptableOrUnknown(data['user_id']!, _userIdMeta));
+    } else if (isInserting) {
+      context.missing(_userIdMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {chatId, userId};
+  @override
+  ArchivedChat map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ArchivedChat(
+      chatId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}chat_id'])!,
+      userId: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}user_id'])!,
+    );
+  }
+
+  @override
+  $ArchivedChatsTable createAlias(String alias) {
+    return $ArchivedChatsTable(attachedDatabase, alias);
+  }
+}
+
+class ArchivedChat extends DataClass implements Insertable<ArchivedChat> {
+  /// Reference to the chat that is archived.
+  ///
+  /// This column references the `id` column in the `Chats` table.
+  /// The `onDelete: KeyAction.cascade` ensures that if a chat is deleted,
+  /// all corresponding archived chat entries will also be deleted.
+  final int chatId;
+
+  /// Reference to the user who archived the chat.
+  ///
+  /// This column references the `id` column in the `Users` table.
+  /// The `onDelete: KeyAction.cascade` ensures that if a user is deleted,
+  /// all corresponding archived chat entries will also be deleted.
+  final int userId;
+  const ArchivedChat({required this.chatId, required this.userId});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['chat_id'] = Variable<int>(chatId);
+    map['user_id'] = Variable<int>(userId);
+    return map;
+  }
+
+  ArchivedChatsCompanion toCompanion(bool nullToAbsent) {
+    return ArchivedChatsCompanion(
+      chatId: Value(chatId),
+      userId: Value(userId),
+    );
+  }
+
+  factory ArchivedChat.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ArchivedChat(
+      chatId: serializer.fromJson<int>(json['chatId']),
+      userId: serializer.fromJson<int>(json['userId']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'chatId': serializer.toJson<int>(chatId),
+      'userId': serializer.toJson<int>(userId),
+    };
+  }
+
+  ArchivedChat copyWith({int? chatId, int? userId}) => ArchivedChat(
+        chatId: chatId ?? this.chatId,
+        userId: userId ?? this.userId,
+      );
+  @override
+  String toString() {
+    return (StringBuffer('ArchivedChat(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(chatId, userId);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ArchivedChat &&
+          other.chatId == this.chatId &&
+          other.userId == this.userId);
+}
+
+class ArchivedChatsCompanion extends UpdateCompanion<ArchivedChat> {
+  final Value<int> chatId;
+  final Value<int> userId;
+  final Value<int> rowid;
+  const ArchivedChatsCompanion({
+    this.chatId = const Value.absent(),
+    this.userId = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ArchivedChatsCompanion.insert({
+    required int chatId,
+    required int userId,
+    this.rowid = const Value.absent(),
+  })  : chatId = Value(chatId),
+        userId = Value(userId);
+  static Insertable<ArchivedChat> custom({
+    Expression<int>? chatId,
+    Expression<int>? userId,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (chatId != null) 'chat_id': chatId,
+      if (userId != null) 'user_id': userId,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ArchivedChatsCompanion copyWith(
+      {Value<int>? chatId, Value<int>? userId, Value<int>? rowid}) {
+    return ArchivedChatsCompanion(
+      chatId: chatId ?? this.chatId,
+      userId: userId ?? this.userId,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (chatId.present) {
+      map['chat_id'] = Variable<int>(chatId.value);
+    }
+    if (userId.present) {
+      map['user_id'] = Variable<int>(userId.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ArchivedChatsCompanion(')
+          ..write('chatId: $chatId, ')
+          ..write('userId: $userId, ')
+          ..write('rowid: $rowid')
           ..write(')'))
         .toString();
   }
@@ -1952,12 +2394,22 @@ abstract class _$Database extends GeneratedDatabase {
   late final $ChatParticipantsTable chatParticipants =
       $ChatParticipantsTable(this);
   late final $MessagesTable messages = $MessagesTable(this);
+  late final $PinnedChatsTable pinnedChats = $PinnedChatsTable(this);
+  late final $ArchivedChatsTable archivedChats = $ArchivedChatsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [posts, users, chats, contacts, chatParticipants, messages];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+        posts,
+        users,
+        chats,
+        contacts,
+        chatParticipants,
+        messages,
+        pinnedChats,
+        archivedChats
+      ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
         [
@@ -2001,6 +2453,34 @@ abstract class _$Database extends GeneratedDatabase {
                 limitUpdateKind: UpdateKind.delete),
             result: [
               TableUpdate('messages', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('chats',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('pinned_chats', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('users',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('pinned_chats', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('chats',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('archived_chats', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('users',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('archived_chats', kind: UpdateKind.delete),
             ],
           ),
         ],
@@ -2320,6 +2800,32 @@ class $$UsersTableFilterComposer
                 $state.db, $state.db.messages, joinBuilder, parentComposers)));
     return f(composer);
   }
+
+  ComposableFilter pinnedChatUsers(
+      ComposableFilter Function($$PinnedChatsTableFilterComposer f) f) {
+    final $$PinnedChatsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.pinnedChats,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder, parentComposers) =>
+            $$PinnedChatsTableFilterComposer(ComposerState($state.db,
+                $state.db.pinnedChats, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter archivedChatUsers(
+      ComposableFilter Function($$ArchivedChatsTableFilterComposer f) f) {
+    final $$ArchivedChatsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.archivedChats,
+        getReferencedColumn: (t) => t.userId,
+        builder: (joinBuilder, parentComposers) =>
+            $$ArchivedChatsTableFilterComposer(ComposerState($state.db,
+                $state.db.archivedChats, joinBuilder, parentComposers)));
+    return f(composer);
+  }
 }
 
 class $$UsersTableOrderingComposer
@@ -2517,6 +3023,32 @@ class $$ChatsTableFilterComposer
         builder: (joinBuilder, parentComposers) =>
             $$MessagesTableFilterComposer(ComposerState(
                 $state.db, $state.db.messages, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter pinnedChats(
+      ComposableFilter Function($$PinnedChatsTableFilterComposer f) f) {
+    final $$PinnedChatsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.pinnedChats,
+        getReferencedColumn: (t) => t.chatId,
+        builder: (joinBuilder, parentComposers) =>
+            $$PinnedChatsTableFilterComposer(ComposerState($state.db,
+                $state.db.pinnedChats, joinBuilder, parentComposers)));
+    return f(composer);
+  }
+
+  ComposableFilter archivedChats(
+      ComposableFilter Function($$ArchivedChatsTableFilterComposer f) f) {
+    final $$ArchivedChatsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $state.db.archivedChats,
+        getReferencedColumn: (t) => t.chatId,
+        builder: (joinBuilder, parentComposers) =>
+            $$ArchivedChatsTableFilterComposer(ComposerState($state.db,
+                $state.db.archivedChats, joinBuilder, parentComposers)));
     return f(composer);
   }
 }
@@ -2855,6 +3387,7 @@ class $$ChatParticipantsTableOrderingComposer
 typedef $$MessagesTableInsertCompanionBuilder = MessagesCompanion Function({
   Value<int> id,
   required String content,
+  Value<MessageType> type,
   required int userId,
   required int chatId,
   Value<PgDateTime> updatedAt,
@@ -2863,6 +3396,7 @@ typedef $$MessagesTableInsertCompanionBuilder = MessagesCompanion Function({
 typedef $$MessagesTableUpdateCompanionBuilder = MessagesCompanion Function({
   Value<int> id,
   Value<String> content,
+  Value<MessageType> type,
   Value<int> userId,
   Value<int> chatId,
   Value<PgDateTime> updatedAt,
@@ -2891,6 +3425,7 @@ class $$MessagesTableTableManager extends RootTableManager<
           getUpdateCompanionBuilder: ({
             Value<int> id = const Value.absent(),
             Value<String> content = const Value.absent(),
+            Value<MessageType> type = const Value.absent(),
             Value<int> userId = const Value.absent(),
             Value<int> chatId = const Value.absent(),
             Value<PgDateTime> updatedAt = const Value.absent(),
@@ -2899,6 +3434,7 @@ class $$MessagesTableTableManager extends RootTableManager<
               MessagesCompanion(
             id: id,
             content: content,
+            type: type,
             userId: userId,
             chatId: chatId,
             updatedAt: updatedAt,
@@ -2907,6 +3443,7 @@ class $$MessagesTableTableManager extends RootTableManager<
           getInsertCompanionBuilder: ({
             Value<int> id = const Value.absent(),
             required String content,
+            Value<MessageType> type = const Value.absent(),
             required int userId,
             required int chatId,
             Value<PgDateTime> updatedAt = const Value.absent(),
@@ -2915,6 +3452,7 @@ class $$MessagesTableTableManager extends RootTableManager<
               MessagesCompanion.insert(
             id: id,
             content: content,
+            type: type,
             userId: userId,
             chatId: chatId,
             updatedAt: updatedAt,
@@ -2947,6 +3485,13 @@ class $$MessagesTableFilterComposer
       column: $state.table.content,
       builder: (column, joinBuilders) =>
           ColumnFilters(column, joinBuilders: joinBuilders));
+
+  ColumnWithTypeConverterFilters<MessageType, MessageType, String> get type =>
+      $state.composableBuilder(
+          column: $state.table.type,
+          builder: (column, joinBuilders) => ColumnWithTypeConverterFilters(
+              column,
+              joinBuilders: joinBuilders));
 
   ColumnFilters<PgDateTime> get updatedAt => $state.composableBuilder(
       column: $state.table.updatedAt,
@@ -2996,6 +3541,11 @@ class $$MessagesTableOrderingComposer
       builder: (column, joinBuilders) =>
           ColumnOrderings(column, joinBuilders: joinBuilders));
 
+  ColumnOrderings<String> get type => $state.composableBuilder(
+      column: $state.table.type,
+      builder: (column, joinBuilders) =>
+          ColumnOrderings(column, joinBuilders: joinBuilders));
+
   ColumnOrderings<PgDateTime> get updatedAt => $state.composableBuilder(
       column: $state.table.updatedAt,
       builder: (column, joinBuilders) =>
@@ -3031,6 +3581,252 @@ class $$MessagesTableOrderingComposer
   }
 }
 
+typedef $$PinnedChatsTableInsertCompanionBuilder = PinnedChatsCompanion
+    Function({
+  required int chatId,
+  required int userId,
+  Value<int> rowid,
+});
+typedef $$PinnedChatsTableUpdateCompanionBuilder = PinnedChatsCompanion
+    Function({
+  Value<int> chatId,
+  Value<int> userId,
+  Value<int> rowid,
+});
+
+class $$PinnedChatsTableTableManager extends RootTableManager<
+    _$Database,
+    $PinnedChatsTable,
+    PinnedChat,
+    $$PinnedChatsTableFilterComposer,
+    $$PinnedChatsTableOrderingComposer,
+    $$PinnedChatsTableProcessedTableManager,
+    $$PinnedChatsTableInsertCompanionBuilder,
+    $$PinnedChatsTableUpdateCompanionBuilder> {
+  $$PinnedChatsTableTableManager(_$Database db, $PinnedChatsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          filteringComposer:
+              $$PinnedChatsTableFilterComposer(ComposerState(db, table)),
+          orderingComposer:
+              $$PinnedChatsTableOrderingComposer(ComposerState(db, table)),
+          getChildManagerBuilder: (p) =>
+              $$PinnedChatsTableProcessedTableManager(p),
+          getUpdateCompanionBuilder: ({
+            Value<int> chatId = const Value.absent(),
+            Value<int> userId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PinnedChatsCompanion(
+            chatId: chatId,
+            userId: userId,
+            rowid: rowid,
+          ),
+          getInsertCompanionBuilder: ({
+            required int chatId,
+            required int userId,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              PinnedChatsCompanion.insert(
+            chatId: chatId,
+            userId: userId,
+            rowid: rowid,
+          ),
+        ));
+}
+
+class $$PinnedChatsTableProcessedTableManager extends ProcessedTableManager<
+    _$Database,
+    $PinnedChatsTable,
+    PinnedChat,
+    $$PinnedChatsTableFilterComposer,
+    $$PinnedChatsTableOrderingComposer,
+    $$PinnedChatsTableProcessedTableManager,
+    $$PinnedChatsTableInsertCompanionBuilder,
+    $$PinnedChatsTableUpdateCompanionBuilder> {
+  $$PinnedChatsTableProcessedTableManager(super.$state);
+}
+
+class $$PinnedChatsTableFilterComposer
+    extends FilterComposer<_$Database, $PinnedChatsTable> {
+  $$PinnedChatsTableFilterComposer(super.$state);
+  $$ChatsTableFilterComposer get chatId {
+    final $$ChatsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.chatId,
+        referencedTable: $state.db.chats,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$ChatsTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.chats, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
+class $$PinnedChatsTableOrderingComposer
+    extends OrderingComposer<_$Database, $PinnedChatsTable> {
+  $$PinnedChatsTableOrderingComposer(super.$state);
+  $$ChatsTableOrderingComposer get chatId {
+    final $$ChatsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.chatId,
+        referencedTable: $state.db.chats,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$ChatsTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.chats, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
+typedef $$ArchivedChatsTableInsertCompanionBuilder = ArchivedChatsCompanion
+    Function({
+  required int chatId,
+  required int userId,
+  Value<int> rowid,
+});
+typedef $$ArchivedChatsTableUpdateCompanionBuilder = ArchivedChatsCompanion
+    Function({
+  Value<int> chatId,
+  Value<int> userId,
+  Value<int> rowid,
+});
+
+class $$ArchivedChatsTableTableManager extends RootTableManager<
+    _$Database,
+    $ArchivedChatsTable,
+    ArchivedChat,
+    $$ArchivedChatsTableFilterComposer,
+    $$ArchivedChatsTableOrderingComposer,
+    $$ArchivedChatsTableProcessedTableManager,
+    $$ArchivedChatsTableInsertCompanionBuilder,
+    $$ArchivedChatsTableUpdateCompanionBuilder> {
+  $$ArchivedChatsTableTableManager(_$Database db, $ArchivedChatsTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          filteringComposer:
+              $$ArchivedChatsTableFilterComposer(ComposerState(db, table)),
+          orderingComposer:
+              $$ArchivedChatsTableOrderingComposer(ComposerState(db, table)),
+          getChildManagerBuilder: (p) =>
+              $$ArchivedChatsTableProcessedTableManager(p),
+          getUpdateCompanionBuilder: ({
+            Value<int> chatId = const Value.absent(),
+            Value<int> userId = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ArchivedChatsCompanion(
+            chatId: chatId,
+            userId: userId,
+            rowid: rowid,
+          ),
+          getInsertCompanionBuilder: ({
+            required int chatId,
+            required int userId,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ArchivedChatsCompanion.insert(
+            chatId: chatId,
+            userId: userId,
+            rowid: rowid,
+          ),
+        ));
+}
+
+class $$ArchivedChatsTableProcessedTableManager extends ProcessedTableManager<
+    _$Database,
+    $ArchivedChatsTable,
+    ArchivedChat,
+    $$ArchivedChatsTableFilterComposer,
+    $$ArchivedChatsTableOrderingComposer,
+    $$ArchivedChatsTableProcessedTableManager,
+    $$ArchivedChatsTableInsertCompanionBuilder,
+    $$ArchivedChatsTableUpdateCompanionBuilder> {
+  $$ArchivedChatsTableProcessedTableManager(super.$state);
+}
+
+class $$ArchivedChatsTableFilterComposer
+    extends FilterComposer<_$Database, $ArchivedChatsTable> {
+  $$ArchivedChatsTableFilterComposer(super.$state);
+  $$ChatsTableFilterComposer get chatId {
+    final $$ChatsTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.chatId,
+        referencedTable: $state.db.chats,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$ChatsTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.chats, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$UsersTableFilterComposer get userId {
+    final $$UsersTableFilterComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableFilterComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
+class $$ArchivedChatsTableOrderingComposer
+    extends OrderingComposer<_$Database, $ArchivedChatsTable> {
+  $$ArchivedChatsTableOrderingComposer(super.$state);
+  $$ChatsTableOrderingComposer get chatId {
+    final $$ChatsTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.chatId,
+        referencedTable: $state.db.chats,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$ChatsTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.chats, joinBuilder, parentComposers)));
+    return composer;
+  }
+
+  $$UsersTableOrderingComposer get userId {
+    final $$UsersTableOrderingComposer composer = $state.composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.userId,
+        referencedTable: $state.db.users,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder, parentComposers) => $$UsersTableOrderingComposer(
+            ComposerState(
+                $state.db, $state.db.users, joinBuilder, parentComposers)));
+    return composer;
+  }
+}
+
 class _$DatabaseManager {
   final _$Database _db;
   _$DatabaseManager(this._db);
@@ -3046,4 +3842,8 @@ class _$DatabaseManager {
       $$ChatParticipantsTableTableManager(_db, _db.chatParticipants);
   $$MessagesTableTableManager get messages =>
       $$MessagesTableTableManager(_db, _db.messages);
+  $$PinnedChatsTableTableManager get pinnedChats =>
+      $$PinnedChatsTableTableManager(_db, _db.pinnedChats);
+  $$ArchivedChatsTableTableManager get archivedChats =>
+      $$ArchivedChatsTableTableManager(_db, _db.archivedChats);
 }

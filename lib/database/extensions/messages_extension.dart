@@ -8,6 +8,7 @@ import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/message.dart';
 import 'package:chat_server/tables/chat_participants.dart';
 import 'package:chat_server/tables/chats.dart';
+import 'package:chat_server/tables/messages.dart';
 import 'package:chat_server/tables/users.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
@@ -58,6 +59,7 @@ extension MessagesExtension on Database {
     required User user,
     required int chatId,
     required String content,
+    MessageType type = MessageType.basic,
   }) {
     return transaction<MessageModel>(() async {
       final Chat chat = await getChatOrThrow(chatId);
@@ -87,6 +89,7 @@ extension MessagesExtension on Database {
           content: content,
           userId: user.id,
           chatId: chatId,
+          type: Value(type),
         ),
       );
 
@@ -100,8 +103,6 @@ extension MessagesExtension on Database {
         message: message,
         user: user,
       );
-
-      unawaited(updateChatLastActivity(chatId: chatId));
 
       return model;
     });
@@ -146,8 +147,6 @@ extension MessagesExtension on Database {
           'Could not delete message',
         );
       }
-
-      unawaited(updateChatLastActivity(chatId: chat.id));
     });
   }
 

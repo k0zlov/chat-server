@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/archived_chats_extension.dart';
 import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/database/extensions/messages_extension.dart';
+import 'package:chat_server/database/extensions/pinned_chats_extension.dart';
 import 'package:chat_server/database/extensions/users_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat.dart';
@@ -10,6 +12,7 @@ import 'package:chat_server/models/chat_participant.dart';
 import 'package:chat_server/models/message.dart';
 import 'package:chat_server/tables/chat_participants.dart';
 import 'package:chat_server/tables/chats.dart';
+import 'package:chat_server/tables/messages.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
@@ -129,16 +132,35 @@ extension ChatParticipantsExtension on Database {
 
       final List<MessageModel> messages = await getAllMessages(chatId: chat.id);
 
+      final MessageModel joinMessage = await sendMessage(
+        user: user,
+        chatId: chatId,
+        content: '${user.name} joined chat',
+        type: MessageType.info,
+      );
+
+      final Future<bool> isPinned = checkIfChatPinned(
+        userId: user.id,
+        chatId: chatId,
+      );
+
+      final Future<bool> isArchived = checkIfChatArchived(
+        userId: user.id,
+        chatId: chatId,
+      );
+
+      final futures = await Future.wait([isArchived, isPinned]);
+
       final ChatModel model = ChatModel(
         chat: chat,
+        isArchived: futures[0],
+        isPinned: futures[1],
         participants: [
           ...participants,
           ChatParticipantModel(participant: participant, user: user),
         ],
-        messages: messages,
+        messages: [...messages, joinMessage],
       );
-
-      unawaited(updateChatLastActivity(chatId: chatId));
 
       return model;
     });
@@ -169,16 +191,29 @@ extension ChatParticipantsExtension on Database {
         throw const ApiException.forbidden('You are not in this chat');
       }
 
+      final User? user = await getUserFromId(userId: userId);
+
+      if (user != null) {
+        await sendMessage(
+          user: user,
+          chatId: chatId,
+          content: '${user.name} left chat',
+          type: MessageType.info,
+        );
+      }
+
       final bool result = await chatParticipants.deleteOne(participant);
       if (!result) {
         throw const ApiException.internalServerError(
           'Could not delete chat participant',
         );
       }
-      unawaited(updateChatLastActivity(chatId: chatId));
     });
   }
 
+  /// Updates the role of a chat participant within a transaction.
+  /// Only chat owners can change roles and cannot change their own role.
+  /// Throws [ApiException] if constraints are violated.
   Future<List<ChatParticipantModel>> updateChatParticipant({
     required int chatId,
     required int targetId,
@@ -217,6 +252,7 @@ extension ChatParticipantsExtension on Database {
             await chatParticipants.replaceOne(
               targetParticipant.copyWith(role: newRole),
             );
+            break;
           }
         case ChatParticipantRole.admin:
         case ChatParticipantRole.member:
@@ -224,10 +260,9 @@ extension ChatParticipantsExtension on Database {
             await chatParticipants.replaceOne(
               targetParticipant.copyWith(role: newRole),
             );
+            break;
           }
       }
-
-      unawaited(updateChatLastActivity(chatId: chatId));
 
       return getChatParticipants(chatId: chatId);
     });

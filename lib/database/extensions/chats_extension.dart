@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/archived_chats_extension.dart';
 import 'package:chat_server/database/extensions/chat_participants_extension.dart';
 import 'package:chat_server/database/extensions/messages_extension.dart';
+import 'package:chat_server/database/extensions/pinned_chats_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/chat.dart';
 import 'package:chat_server/models/chat_participant.dart';
@@ -63,6 +65,8 @@ extension ChatsExtension on Database {
 
       return ChatModel(
         chat: chat,
+        isArchived: false,
+        isPinned: false,
         participants: [model],
         messages: [],
       );
@@ -152,13 +156,25 @@ extension ChatsExtension on Database {
         chatId: chat.id,
       );
 
+      final Future<bool> isPinned = checkIfChatPinned(
+        userId: userId,
+        chatId: chat.id,
+      );
+
+      final Future<bool> isArchived = checkIfChatArchived(
+        userId: userId,
+        chatId: chat.id,
+      );
+
+      final futures = await Future.wait([isArchived, isPinned]);
+
       final ChatModel model = ChatModel(
         chat: chat,
+        isArchived: futures[0],
+        isPinned: futures[1],
         participants: participants,
         messages: messages,
       );
-
-      unawaited(updateChatLastActivity(chatId: chat.id));
 
       return model;
     });
@@ -187,6 +203,8 @@ extension ChatsExtension on Database {
         models.add(
           ChatModel(
             chat: chat,
+            isPinned: false,
+            isArchived: false,
             participants: await getChatParticipants(chatId: chat.id),
             messages: await getAllMessages(chatId: chat.id),
           ),
@@ -292,9 +310,25 @@ extension ChatsExtension on Database {
             );
       }
 
+      final Future<List<ArchivedChat>> archivedChats = getArchivedChats(
+        userId: userId,
+      );
+
+      final Future<List<PinnedChat>> pinnedChats = getPinnedChats(
+        userId: userId,
+      );
+
+      final futures = await Future.wait([archivedChats, pinnedChats]);
+
       final List<ChatModel> response = userChats.map((chat) {
         return ChatModel(
           chat: chat,
+          isArchived: (futures[0] as List<ArchivedChat>).contains(
+            ArchivedChat(chatId: chat.id, userId: userId),
+          ),
+          isPinned: (futures[1] as List<PinnedChat>).contains(
+            PinnedChat(chatId: chat.id, userId: userId),
+          ),
           participants: participantsByChatId[chat.id] ?? [],
           messages: messagesByChatId[chat.id] ?? [],
         );

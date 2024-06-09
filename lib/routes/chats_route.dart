@@ -83,6 +83,12 @@ class ChatsRoute extends ServerRoute {
       bodyParams: updateParticipantParams,
     );
 
+    const pinAndArchiveParams = <String>['chatId'];
+
+    final Middleware pinAndArchiveValidator = validatorMiddleware(
+      requestParams: pinAndArchiveParams,
+    );
+
     return router
       // Route to get all chats.
       ..get('/', controller.getAll)
@@ -98,6 +104,16 @@ class ChatsRoute extends ServerRoute {
       ..postMw('/leave', controller.leave, [validator])
       // Route to search for chats, protected by search validation middleware.
       ..getMw('/search', controller.search, [searchValidator])
+      // Route to pin chat, protected by pinAndArchive validation middleware.
+      ..postMw('/pin', controller.pinChat, [pinAndArchiveValidator])
+      // Route to unpin chat, protected by pinAndArchive validation middleware.
+      ..deleteMw('/unpin', controller.unpinChat, [pinAndArchiveValidator])
+      // Route to archive chat, protected by pinAndArchive validation middleware.
+      ..postMw('/archive', controller.archiveChat, [pinAndArchiveValidator])
+      // Route to unarchive chat, protected by pinAndArchive validation middleware.
+      ..deleteMw('/unarchive', controller.unarchiveChat, [
+        pinAndArchiveValidator,
+      ])
       // Route to update a chat participant, protected by update validation middleware.
       ..putMw(
         '/update-participant',

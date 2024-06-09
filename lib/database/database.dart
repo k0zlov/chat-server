@@ -1,7 +1,9 @@
+import 'package:chat_server/tables/archived_chats.dart';
 import 'package:chat_server/tables/chat_participants.dart';
 import 'package:chat_server/tables/chats.dart';
 import 'package:chat_server/tables/contacts.dart';
 import 'package:chat_server/tables/messages.dart';
+import 'package:chat_server/tables/pinned_chats.dart';
 import 'package:chat_server/tables/posts.dart';
 import 'package:chat_server/tables/users.dart';
 import 'package:drift/drift.dart';
@@ -15,7 +17,16 @@ part 'database.g.dart';
 /// This class extends the generated _$Database class to include
 /// custom methods and properties.
 @DriftDatabase(
-  tables: [Posts, Users, Chats, Contacts, ChatParticipants, Messages],
+  tables: [
+    Posts,
+    Users,
+    Chats,
+    Contacts,
+    ChatParticipants,
+    Messages,
+    PinnedChats,
+    ArchivedChats,
+  ],
 )
 class Database extends _$Database {
   /// Constructs a [Database] instance using the provided database connection.

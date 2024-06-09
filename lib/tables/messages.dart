@@ -4,6 +4,15 @@ import 'package:chat_server/tables/users.dart';
 import 'package:drift/drift.dart';
 import 'package:drift_postgres/drift_postgres.dart';
 
+/// Enum representing the types of messages.
+enum MessageType {
+  /// Basic user message
+  basic,
+
+  /// Info message such as user joining, leaving notification etc.
+  info
+}
+
 /// Table schema for messages.
 class Messages extends Table {
   /// Unique identifier for each message.
@@ -11,6 +20,10 @@ class Messages extends Table {
 
   /// Content of the message, with a minimum length constraint.
   TextColumn get content => text().withLength(min: 1)();
+
+  /// Type of the message, with a default value of 'basic'.
+  TextColumn get type =>
+      textEnum<MessageType>().withDefault(Constant(MessageType.basic.name))();
 
   /// References the user ID from the [Users] table, with cascade delete.
   @ReferenceName('messageAuthors')

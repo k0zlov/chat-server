@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:chat_server/controllers/messages_controller/messages_controller.dart';
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/database/extensions/messages_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/message.dart';
@@ -40,6 +42,8 @@ class MessagesControllerImpl implements MessagesController {
       chatId: chatId,
       content: content,
     );
+
+    unawaited(database.updateChatLastActivity(chatId: chatId));
 
     return Response.ok(jsonEncode(model.toJson()));
   }
