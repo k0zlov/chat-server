@@ -1,17 +1,18 @@
 import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
+import 'package:chat_server/models/chat.dart';
 import 'package:chat_server/tables/chats.dart';
 import 'package:drift/drift.dart';
 
 /// Extension for handling archived chats.
 extension ArchivedChatsExtension on Database {
   /// Archives a chat for a user.
-  Future<void> archiveChat({
+  Future<ChatModel> archiveChat({
     required int chatId,
     required int userId,
   }) {
-    return transaction<void>(() async {
+    return transaction<ChatModel>(() async {
       final Chat chat = await getChatOrThrow(chatId);
 
       if (chat.type == ChatType.savedMessages) {
@@ -42,15 +43,17 @@ extension ArchivedChatsExtension on Database {
           'Could not archive chat',
         );
       }
+
+      return getChatModel(chatId: chatId, userId: userId);
     });
   }
 
   /// Unarchives a chat for a user.
-  Future<void> unarchiveChat({
+  Future<ChatModel> unarchiveChat({
     required int chatId,
     required int userId,
   }) {
-    return transaction<void>(() async {
+    return transaction<ChatModel>(() async {
       final bool result = await archivedChats.deleteOne(
         ArchivedChat(chatId: chatId, userId: userId),
       );
@@ -60,6 +63,8 @@ extension ArchivedChatsExtension on Database {
           'This chat is not archived',
         );
       }
+
+      return getChatModel(chatId: chatId, userId: userId);
     });
   }
 

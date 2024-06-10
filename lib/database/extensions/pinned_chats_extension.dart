@@ -1,15 +1,17 @@
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
+import 'package:chat_server/models/chat.dart';
 import 'package:drift/drift.dart';
 
 /// Extension for handling pinned chats.
 extension PinnedChatsExtension on Database {
   /// Pins a chat for a user.
-  Future<void> pinChat({
+  Future<ChatModel> pinChat({
     required int chatId,
     required int userId,
   }) {
-    return transaction<void>(() async {
+    return transaction<ChatModel>(() async {
       final int count = await pinnedChats
           .count(
             where: (tbl) =>
@@ -32,15 +34,17 @@ extension PinnedChatsExtension on Database {
           'Could not pin chat',
         );
       }
+
+      return getChatModel(chatId: chatId, userId: userId);
     });
   }
 
   /// Unpins a chat for a user.
-  Future<void> unpinChat({
+  Future<ChatModel> unpinChat({
     required int chatId,
     required int userId,
   }) {
-    return transaction<void>(() async {
+    return transaction<ChatModel>(() async {
       final bool result = await pinnedChats.deleteOne(
         PinnedChat(chatId: chatId, userId: userId),
       );
@@ -50,6 +54,7 @@ extension PinnedChatsExtension on Database {
           'This chat is not pinned',
         );
       }
+      return getChatModel(chatId: chatId, userId: userId);
     });
   }
 
@@ -81,5 +86,4 @@ extension PinnedChatsExtension on Database {
 
     return chat != null;
   }
-
 }

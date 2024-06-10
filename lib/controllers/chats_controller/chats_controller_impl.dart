@@ -294,9 +294,12 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.badRequest(errorMessage);
     }
 
-    await database.archiveChat(chatId: chatId, userId: user.id);
+    final ChatModel model = await database.archiveChat(
+      chatId: chatId,
+      userId: user.id,
+    );
 
-    return Response.ok(jsonEncode('Successfully archived chat'));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 
   @override
@@ -314,9 +317,12 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.badRequest(errorMessage);
     }
 
-    await database.unarchiveChat(chatId: chatId, userId: user.id);
+    final ChatModel model = await database.unarchiveChat(
+      chatId: chatId,
+      userId: user.id,
+    );
 
-    return Response.ok(jsonEncode('Successfully unarchived chat'));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 
   @override
@@ -334,9 +340,12 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.badRequest(errorMessage);
     }
 
-    await database.pinChat(chatId: chatId, userId: user.id);
+    final ChatModel model = await database.pinChat(
+      chatId: chatId,
+      userId: user.id,
+    );
 
-    return Response.ok(jsonEncode('Successfully pinned chat'));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 
   @override
@@ -354,8 +363,11 @@ class ChatsControllerImpl implements ChatsController {
       throw const ApiException.badRequest(errorMessage);
     }
 
-    await database.unpinChat(chatId: chatId, userId: user.id);
+    final ChatModel model = await database.unpinChat(
+      chatId: chatId,
+      userId: user.id,
+    );
 
-    return Response.ok(jsonEncode('Successfully unpinned chat'));
+    return Response.ok(jsonEncode(model.toJson()));
   }
 }

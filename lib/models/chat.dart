@@ -44,10 +44,10 @@ class ChatModel {
 
     return {
       ...chat.toResponse(),
-      'participants': participantsResponse,
-      'messages': messagesResponse,
       'isPinned': isPinned,
       'isArchived': isArchived,
+      'participants': participantsResponse,
+      'messages': messagesResponse,
     };
   }
 }

@@ -18,6 +18,49 @@ import 'package:drift_postgres/drift_postgres.dart';
 
 /// Extension for performing database operations related to Chats
 extension ChatsExtension on Database {
+  /// Retrieves all data for [ChatModel] from database.
+  Future<ChatModel> getChatModel({
+    required int chatId,
+    required int userId,
+  }) {
+    return transaction<ChatModel>(() async {
+      final Chat chat = await getChatOrThrow(chatId);
+
+      final Future<List<ChatParticipantModel>> participants =
+          getChatParticipants(chatId: chatId);
+
+      final Future<List<MessageModel>> messages =
+          getAllMessages(chatId: chatId);
+
+      final Future<bool> isPinned = checkIfChatPinned(
+        userId: userId,
+        chatId: chat.id,
+      );
+
+      final Future<bool> isArchived = checkIfChatArchived(
+        userId: userId,
+        chatId: chat.id,
+      );
+
+      final futures = await Future.wait([
+        participants,
+        messages,
+        isArchived,
+        isPinned,
+      ]);
+
+      final ChatModel model = ChatModel(
+        chat: chat,
+        participants: futures[0] as List<ChatParticipantModel>,
+        messages: futures[1] as List<MessageModel>,
+        isArchived: futures[2] as bool,
+        isPinned: futures[3] as bool,
+      );
+
+      return model;
+    });
+  }
+
   /// Creates a new chat with the specified title, type, and description.
   ///
   /// Assigns the user as the owner of the chat.
