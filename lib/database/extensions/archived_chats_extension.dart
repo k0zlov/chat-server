@@ -1,5 +1,7 @@
 import 'package:chat_server/database/database.dart';
+import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
+import 'package:chat_server/tables/chats.dart';
 import 'package:drift/drift.dart';
 
 /// Extension for handling archived chats.
@@ -10,6 +12,14 @@ extension ArchivedChatsExtension on Database {
     required int userId,
   }) {
     return transaction<void>(() async {
+      final Chat chat = await getChatOrThrow(chatId);
+
+      if (chat.type == ChatType.savedMessages) {
+        throw const ApiException.forbidden(
+          'You cannot archive this chat',
+        );
+      }
+
       final int count = await archivedChats
           .count(
             where: (tbl) =>
