@@ -105,9 +105,10 @@ class ContactsControllerImpl implements ContactsController {
       if (u.id == user.id) continue;
 
       response.add({
-        'id': u.id,
+        'contactUserId': u.id,
         'name': u.name,
-        'createdAt': u.createdAt.dateTime.toIso8601String(),
+        'email': u.email,
+        'lastActivityAt': u.lastActivityAt.dateTime.toIso8601String(),
       });
     }
 
