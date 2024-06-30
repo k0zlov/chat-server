@@ -426,12 +426,29 @@ extension ChatsExtension on Database {
       }
 
       if (shouldCreateChat) {
-        await chats.insertReturningOrNull(
+        final Chat? chat = await chats.insertReturningOrNull(
           ChatsCompanion.insert(
             title: 'Private chat $firstUserId:$secondUserId',
             type: const Value(ChatType.private),
           ),
         );
+
+        if (chat == null) {
+          throw const ApiException.internalServerError(
+            'Could not create private chat',
+          );
+        }
+
+        await chatParticipants.insertAll([
+          ChatParticipantsCompanion.insert(
+            chatId: chat.id,
+            userId: firstUserId,
+          ),
+          ChatParticipantsCompanion.insert(
+            chatId: chat.id,
+            userId: secondUserId,
+          ),
+        ]);
       }
     });
   }
