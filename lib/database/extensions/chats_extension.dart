@@ -439,16 +439,19 @@ extension ChatsExtension on Database {
           );
         }
 
-        await chatParticipants.insertAll([
+        await chatParticipants.insertOne(
           ChatParticipantsCompanion.insert(
             chatId: chat.id,
             userId: firstUserId,
           ),
+        );
+
+        await chatParticipants.insertOne(
           ChatParticipantsCompanion.insert(
             chatId: chat.id,
             userId: secondUserId,
           ),
-        ]);
+        );
       }
     });
   }
