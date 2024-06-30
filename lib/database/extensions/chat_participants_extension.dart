@@ -132,12 +132,16 @@ extension ChatParticipantsExtension on Database {
 
       final List<MessageModel> messages = await getAllMessages(chatId: chat.id);
 
-      final MessageModel joinMessage = await sendMessage(
-        user: user,
-        chatId: chatId,
-        content: '${user.name} joined chat',
-        type: MessageType.info,
-      );
+      MessageModel? joinMessage;
+
+      if (chat.type == ChatType.group) {
+        joinMessage = await sendMessage(
+          user: user,
+          chatId: chatId,
+          content: '${user.name} joined chat',
+          type: MessageType.info,
+        );
+      }
 
       final Future<bool> isPinned = checkIfChatPinned(
         userId: user.id,
@@ -159,7 +163,7 @@ extension ChatParticipantsExtension on Database {
           ...participants,
           ChatParticipantModel(participant: participant, user: user),
         ],
-        messages: [...messages, joinMessage],
+        messages: joinMessage != null ? [...messages, joinMessage] : messages,
       );
 
       return model;
