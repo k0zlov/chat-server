@@ -20,6 +20,7 @@ class ChatParticipantModel {
     return {
       ...participant.toResponse(),
       'name': user.name,
+      'bio': user.bio,
       'lastActivityAt': user.lastActivityAt.dateTime.toIso8601String(),
     };
   }

@@ -28,6 +28,7 @@ class ContactModel {
       ...contact.toResponse(),
       'name': user.name,
       'email': user.email,
+      'bio': user.bio,
       'lastActivityAt': user.lastActivityAt.dateTime.toIso8601String(),
     };
   }
