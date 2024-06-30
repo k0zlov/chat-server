@@ -2,7 +2,6 @@ import 'package:chat_server/database/database.dart';
 import 'package:chat_server/database/extensions/chats_extension.dart';
 import 'package:chat_server/exceptions/api_exception.dart';
 import 'package:chat_server/models/contact.dart';
-import 'package:chat_server/tables/chats.dart';
 import 'package:collection/collection.dart';
 import 'package:drift/drift.dart';
 
@@ -112,11 +111,9 @@ extension ContactsExtension on Database {
         throw const ApiException.badRequest(errorMessage);
       }
 
-      await createChat(
-        user: target,
-        title: 'Private chat',
-        chatType: ChatType.private,
-        description: '',
+      await createPrivateChat(
+        firstUserId: userId,
+        secondUserId: target.id,
       );
 
       final ContactModel model = ContactModel(

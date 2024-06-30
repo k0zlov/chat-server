@@ -380,4 +380,59 @@ extension ChatsExtension on Database {
       return response;
     });
   }
+
+  /// Creates private chat between two users if such chat does not exist
+  Future<void> createPrivateChat({
+    required int firstUserId,
+    required int secondUserId,
+  }) {
+    return transaction(() async {
+      final List<int> userIds = [firstUserId, secondUserId];
+
+      final List<ChatParticipant> participants =
+          await (chatParticipants.select()
+                ..where(
+                  (tbl) => tbl.userId.isIn(userIds),
+                ))
+              .get();
+
+      final List<int> chatIds = participants.map((e) => e.chatId).toList();
+
+      final List<Chat> participantChats = await (chats.select()
+            ..where(
+              (tbl) =>
+                  tbl.id.isIn(chatIds) & tbl.type.equals(ChatType.private.name),
+            ))
+          .get();
+
+      bool shouldCreateChat = true;
+
+      for (final ChatParticipant i in participants) {
+        for (final ChatParticipant y in participants) {
+          if (i.userId == y.userId) continue;
+
+          if (i.chatId != y.chatId) continue;
+
+          final Chat? chat =
+              participantChats.firstWhereOrNull((e) => e.id == i.chatId);
+
+          if (chat == null) continue;
+
+          if (chat.type != ChatType.private) continue;
+
+          shouldCreateChat = false;
+          break;
+        }
+      }
+
+      if (shouldCreateChat) {
+        await chats.insertReturningOrNull(
+          ChatsCompanion.insert(
+            title: 'Private chat $firstUserId:$secondUserId',
+            type: const Value(ChatType.private),
+          ),
+        );
+      }
+    });
+  }
 }
